@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="NYLON WATCH">
+<title>NYLON WATCH</title>
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23b8c6d6'/%3E%3Cstop offset='.45' stop-color='%23e9d8f4'/%3E%3Cstop offset='.7' stop-color='%23a8e0d4'/%3E%3Cstop offset='1' stop-color='%237b8aa0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='180' height='180' rx='40' fill='%230a0a0f'/%3E%3Ctext x='50%25' y='58%25' font-family='Helvetica,Arial' font-weight='800' font-size='96' text-anchor='middle' fill='url(%23g)'%3EN%3C/text%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#0a0a0f;--bg2:#11121a;--card:#15161f;--line:#23252f;
+    --ink:#eef0f4;--mut:#878b98;--dim:#5c606d;
+    --new:#a8e0d4;--restock:#e6b3ff;--glossy:#ffd27a;
+    --s1:#b8c6d6;--s2:#e9d8f4;--s3:#a8e0d4;--s4:#7b8aa0;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);
+    font:15px/1.45 ui-sans-serif,-apple-system,"Helvetica Neue",Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;padding-bottom:env(safe-area-inset-bottom)}
+  a{color:inherit;text-decoration:none}
+
+  header{position:sticky;top:0;z-index:40;
+    background:linear-gradient(180deg,rgba(10,10,15,.96),rgba(10,10,15,.82));
+    backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--line);padding:calc(env(safe-area-inset-top) + 10px) 16px 9px}
+  .wordmark{font-weight:800;letter-spacing:.14em;font-size:21px;
+    background:linear-gradient(105deg,var(--s4),var(--s1) 28%,var(--s2) 52%,var(--s3) 74%,var(--s4));
+    background-size:240% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;
+    animation:sheen 9s linear infinite}
+  @keyframes sheen{to{background-position:240% 0}}
+  @media (prefers-reduced-motion:reduce){.wordmark{animation:none}}
+  .subline{display:flex;gap:10px;align-items:baseline;margin-top:3px;color:var(--dim);font-size:11px;letter-spacing:.05em;flex-wrap:wrap}
+  .subline b{color:var(--mut);font-weight:600}
+
+  .controls{display:flex;gap:8px;margin-top:11px;align-items:center}
+  .search{flex:1;display:flex;align-items:center;gap:8px;background:var(--bg2);
+    border:1px solid var(--line);border-radius:11px;padding:9px 12px}
+  .search input{flex:1;background:none;border:none;outline:none;color:var(--ink);font-size:15px}
+  .search input::placeholder{color:var(--dim)}
+  .iconbtn{flex:none;width:40px;height:40px;border-radius:11px;background:var(--bg2);
+    border:1px solid var(--line);color:var(--mut);display:grid;place-items:center;font-size:17px;cursor:pointer}
+  .iconbtn:active{transform:scale(.94)}
+
+  .pills{display:flex;gap:7px;margin-top:10px;overflow-x:auto;scrollbar-width:none}
+  .pills::-webkit-scrollbar{display:none}
+  .pill{flex:none;border:1px solid var(--line);background:var(--bg2);color:var(--mut);
+    border-radius:999px;padding:6px 13px;font-size:12.5px;letter-spacing:.03em;cursor:pointer;white-space:nowrap}
+  .pill[aria-pressed="true"]{color:var(--bg);font-weight:700;border-color:transparent;
+    background:linear-gradient(100deg,var(--s1),var(--s3))}
+  .pill.new[aria-pressed="true"]{background:var(--new)}
+  .pill.restock[aria-pressed="true"]{background:var(--restock)}
+  .pill.glossy[aria-pressed="true"]{background:var(--glossy)}
+  .sep{width:1px;background:var(--line);flex:none;margin:2px 3px}
+
+  /* material chips row */
+  .mats{display:flex;gap:6px;margin-top:9px;overflow-x:auto;scrollbar-width:none;align-items:center}
+  .mats::-webkit-scrollbar{display:none}
+  .mlabel{flex:none;font-size:10px;letter-spacing:.1em;color:var(--dim);text-transform:uppercase;margin-right:2px}
+  .chip{flex:none;border:1px solid var(--line);background:transparent;color:var(--dim);
+    border-radius:8px;padding:5px 10px;font-size:11.5px;letter-spacing:.02em;cursor:pointer;white-space:nowrap}
+  .chip[aria-pressed="true"]{color:var(--ink);border-color:var(--s3);background:rgba(168,224,212,.09)}
+
+  /* gloss threshold */
+  .glossctl{display:flex;align-items:center;gap:9px;margin-top:10px;padding:7px 11px;
+    background:var(--bg2);border:1px solid var(--line);border-radius:11px}
+  .glossctl .lab{font-size:11px;letter-spacing:.06em;color:var(--mut);white-space:nowrap}
+  .glossctl .val{font-size:11px;color:var(--glossy);font-weight:700;width:46px;text-align:right}
+  input[type=range]{flex:1;-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;
+    background:linear-gradient(90deg,var(--line),var(--glossy));outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;
+    background:#fff;border:2px solid var(--glossy);cursor:pointer}
+  input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#fff;border:2px solid var(--glossy);cursor:pointer}
+
+  main{padding:13px 14px 90px;max-width:760px;margin:0 auto}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  @media(min-width:620px){.grid{grid-template-columns:repeat(3,1fr)}}
+  .card{position:relative;background:var(--card);border:1px solid var(--line);
+    border-radius:15px;overflow:hidden;display:flex;flex-direction:column}
+  .card:active{transform:scale(.985)}
+  .thumb{aspect-ratio:4/5;background:#0d0e15;position:relative;overflow:hidden}
+  .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .thumb.ph{display:grid;place-items:center;color:var(--dim);font-size:11px;letter-spacing:.1em}
+
+  .badges{position:absolute;top:8px;left:8px;z-index:2;display:flex;gap:5px;flex-wrap:wrap;max-width:85%}
+  .badge{font-size:10px;font-weight:800;letter-spacing:.08em;padding:4px 7px;border-radius:6px;color:#0a0a0f}
+  .badge.new{background:var(--new)}.badge.restock{background:var(--restock)}.badge.glossy{background:var(--glossy)}
+  .soldout{position:absolute;inset:0;background:rgba(10,10,15,.55);display:grid;place-items:center;
+    color:var(--mut);font-size:11px;letter-spacing:.15em;font-weight:700}
+
+  /* gloss meter, bottom-right of thumb */
+  .gmeter{position:absolute;right:7px;bottom:7px;z-index:2;display:flex;align-items:center;gap:5px;
+    background:rgba(10,10,15,.66);border-radius:7px;padding:3px 7px 3px 6px;backdrop-filter:blur(4px)}
+  .gmeter .bar{width:34px;height:4px;border-radius:2px;background:#2a2c38;overflow:hidden}
+  .gmeter .fill{height:100%;background:linear-gradient(90deg,var(--s3),var(--glossy))}
+  .gmeter .num{font-size:10px;font-weight:700;color:var(--ink);letter-spacing:.02em}
+
+  /* card action buttons (hide + save) */
+  .hidebtn,.savebtn{position:absolute;z-index:3;width:28px;height:28px;border-radius:8px;
+    border:1px solid var(--line);background:rgba(10,10,15,.62);backdrop-filter:blur(4px);
+    color:var(--mut);font-size:14px;display:grid;place-items:center;cursor:pointer;line-height:1}
+  .hidebtn{top:8px;right:8px}
+  .savebtn{top:8px;right:42px;font-size:13px}
+  .hidebtn:active,.savebtn:active{transform:scale(.9)}
+  .savebtn.on{color:var(--restock);border-color:var(--restock);background:rgba(230,179,255,.12)}
+
+  /* exclude menu (mini popover, centered) */
+  .menu-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:70;opacity:0;pointer-events:none;transition:opacity .16s}
+  .menu-bg.open{opacity:1;pointer-events:auto}
+  .menu{position:fixed;left:50%;top:50%;transform:translate(-50%,-46%) scale(.96);z-index:71;
+    width:min(320px,86vw);background:var(--bg2);border:1px solid var(--line);border-radius:16px;
+    padding:16px;opacity:0;pointer-events:none;transition:opacity .16s,transform .16s}
+  .menu.open{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
+  .menu h3{margin:0 0 3px;font-size:14px;color:var(--ink)}
+  .menu .sub{font-size:11.5px;color:var(--dim);margin-bottom:13px;line-height:1.4}
+  .menu button.opt{display:block;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);
+    color:var(--ink);border-radius:10px;padding:11px 13px;font-size:13px;margin-bottom:8px;cursor:pointer}
+  .menu button.opt:active{transform:scale(.98)}
+  .menu button.opt small{display:block;color:var(--dim);font-size:11px;margin-top:2px}
+  .menu .cancel{width:100%;background:none;border:none;color:var(--mut);font-size:13px;padding:8px;cursor:pointer;margin-top:2px}
+
+  /* view switch (Feed / Closet) */
+  .viewsw{display:flex;gap:0;background:var(--bg2);border:1px solid var(--line);border-radius:10px;overflow:hidden;flex:none}
+  .viewsw button{background:none;border:none;color:var(--mut);font-size:12.5px;font-weight:600;padding:8px 13px;cursor:pointer;letter-spacing:.02em}
+  .viewsw button[aria-pressed="true"]{color:var(--bg);background:linear-gradient(100deg,var(--s1),var(--s3))}
+
+  .meta{padding:9px 10px 11px;display:flex;flex-direction:column;gap:3px;flex:1}
+  .vendor{font-size:10.5px;letter-spacing:.08em;color:var(--mut);text-transform:uppercase}
+  .title{font-size:12.5px;line-height:1.3;color:var(--ink);
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .mtags{display:flex;gap:4px;flex-wrap:wrap;margin-top:1px}
+  .mtag{font-size:9px;letter-spacing:.05em;color:var(--s3);border:1px solid var(--line);border-radius:4px;padding:0 5px;text-transform:uppercase}
+  .row{display:flex;justify-content:space-between;align-items:baseline;margin-top:auto;padding-top:6px}
+  .price{font-size:13px;font-weight:700}
+  .shop{font-size:9.5px;color:var(--dim)}
+  .sizes{display:flex;gap:4px;flex-wrap:wrap;margin-top:5px}
+  .sz{font-size:9.5px;color:var(--dim);border:1px solid var(--line);border-radius:5px;padding:1px 5px}
+  .sz.on{color:var(--ink);border-color:var(--s3);background:rgba(168,224,212,.08)}
+  .sz.restocked{color:#0a0a0f;background:var(--restock);border-color:transparent;font-weight:700}
+
+  /* excluded / closet list rows in sheet */
+  .exrow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+  .exrow:last-child{border:none}
+  .exrow .lab{font-size:12.5px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .exrow .typ{font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);border:1px solid var(--line);border-radius:4px;padding:1px 5px;margin-right:7px}
+  .undo{background:none;border:1px solid var(--line);color:var(--s3);border-radius:7px;padding:5px 11px;font-size:12px;cursor:pointer;flex:none}
+  .undo:active{transform:scale(.95)}
+  .miniaction{display:flex;gap:8px;margin:2px 0 4px}
+  .miniaction button{flex:1;background:var(--card);border:1px solid var(--line);color:var(--ink);border-radius:9px;padding:9px;font-size:12px;cursor:pointer}
+  .addform{display:flex;flex-direction:column;gap:8px;margin:4px 0 6px}
+  .addform input,.addform select{background:var(--bg);border:1px solid var(--line);color:var(--ink);border-radius:9px;padding:9px 11px;font-size:13px;outline:none}
+  .addform input::placeholder{color:var(--dim)}
+  .addform .two{display:flex;gap:8px}.addform .two>*{flex:1}
+  .addbtn{background:linear-gradient(100deg,var(--s1),var(--s3));color:var(--bg);border:none;border-radius:9px;padding:10px;font-weight:700;font-size:13px;cursor:pointer}
+
+  .empty{text-align:center;color:var(--dim);padding:64px 24px;line-height:1.6}
+  .empty .big{font-size:15px;color:var(--mut);margin-bottom:6px}
+  .statusbar{margin:0 0 13px;padding:10px 12px;background:var(--bg2);border:1px solid var(--line);
+    border-radius:11px;font-size:11.5px;color:var(--mut)}
+  .statusbar .err{color:#e6a3a3}.statusbar .ok{color:var(--s3)}
+
+  .sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:60;opacity:0;pointer-events:none;transition:opacity .2s}
+  .sheet-bg.open{opacity:1;pointer-events:auto}
+  .sheet{position:fixed;left:0;right:0;bottom:0;z-index:61;background:var(--bg2);
+    border-top:1px solid var(--line);border-radius:20px 20px 0 0;
+    padding:18px 18px calc(env(safe-area-inset-bottom) + 22px);
+    transform:translateY(100%);transition:transform .26s cubic-bezier(.2,.8,.2,1);max-height:84vh;overflow-y:auto}
+  .sheet.open{transform:translateY(0)}
+  .grip{width:38px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 16px}
+  .sheet h2{font-size:13px;letter-spacing:.08em;color:var(--mut);text-transform:uppercase;margin:0 0 12px;font-weight:700}
+  .shoprow{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line)}
+  .shoprow:last-child{border:none}
+  .shopname{font-size:14px}.shopnote{font-size:11px;color:var(--dim);margin-top:2px;max-width:230px}
+  .toggle{width:46px;height:27px;border-radius:99px;background:var(--line);position:relative;cursor:pointer;flex:none;transition:background .18s}
+  .toggle.on{background:linear-gradient(100deg,var(--s1),var(--s3))}
+  .toggle::after{content:"";position:absolute;top:3px;left:3px;width:21px;height:21px;border-radius:50%;background:#fff;transition:transform .18s}
+  .toggle.on::after{transform:translateX(19px)}
+  .setup{font-size:12.5px;color:var(--mut);line-height:1.6}
+  .setup code{background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:1px 5px;font-size:11.5px;color:var(--s3)}
+  .setup ol{padding-left:20px;margin:8px 0}.setup li{margin-bottom:7px}
+</style>
+</head>
+<body>
+<header>
+  <div class="wordmark">NYLON&nbsp;WATCH</div>
+  <div class="subline">
+    <span><b id="count">—</b> pieces</span>
+    <span><b id="updated">—</b></span>
+    <span id="flagcount"></span>
+    <span id="visnote"></span>
+  </div>
+  <div class="controls">
+    <label class="search"><span style="color:var(--dim);font-size:14px">⌕</span>
+      <input id="q" type="search" placeholder="filter — patent, anorak, rains…" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+    <button class="iconbtn" id="openSheet" title="Materials, shops & setup">≡</button>
+  </div>
+  <div class="controls" style="margin-top:9px">
+    <div class="viewsw" id="viewsw">
+      <button data-view="feed" aria-pressed="true">Feed</button>
+      <button data-view="closet" aria-pressed="false">Closet <span id="closetN" style="opacity:.7"></span></button>
+    </div>
+  </div>
+  <div id="feedControls">
+  <div class="pills" id="pills">
+    <button class="pill" data-sort="rank" aria-pressed="true">Best</button>
+    <button class="pill" data-sort="gloss" aria-pressed="false">Shiniest</button>
+    <button class="pill" data-sort="new" aria-pressed="false">Newest</button>
+    <button class="pill" data-sort="price" aria-pressed="false">Price ↑</button>
+    <span class="sep"></span>
+    <button class="pill new" data-filter="NEW" aria-pressed="false">● New</button>
+    <button class="pill restock" data-filter="RESTOCK" aria-pressed="false">● Restock</button>
+    <button class="pill glossy" data-filter="GLOSSY" aria-pressed="false">● Unlisted shine</button>
+    <button class="pill" data-filter="instock" aria-pressed="false">In stock</button>
+  </div>
+  <div class="mats" id="mats"><span class="mlabel">Material</span></div>
+  <div class="glossctl">
+    <span class="lab">Min gloss</span>
+    <input type="range" id="gloss" min="0" max="100" value="0" step="5">
+    <span class="val" id="glossval">off</span>
+  </div>
+  </div>
+  <div id="closetControls" style="display:none">
+    <div class="pills" id="closetTabs">
+      <button class="pill" data-ctab="saved" aria-pressed="true">♥ Want / saved</button>
+      <button class="pill" data-ctab="owned" aria-pressed="false">Own</button>
+      <button class="pill" data-ctab="add" aria-pressed="false">+ Add owned</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div id="status"></div>
+  <div class="grid" id="feed"></div>
+  <div class="empty" id="empty" style="display:none">
+    <div class="big">Nothing matches yet.</div>
+    Lower the gloss slider, enable more materials, or open ≡ for shops.
+  </div>
+</main>
+
+<!-- exclude menu -->
+<div class="menu-bg" id="menuBg"></div>
+<div class="menu" id="menu">
+  <h3 id="menuTitle">Exclude</h3>
+  <div class="sub" id="menuSub"></div>
+  <button class="opt" data-ex="item">Hide just this item<small id="exItemSub"></small></button>
+  <button class="opt" data-ex="brand">Mute this brand<small id="exBrandSub"></small></button>
+  <button class="opt" data-ex="keyword">Mute a keyword…<small>Hide anything with a word in its title</small></button>
+  <button class="cancel" id="menuCancel">Cancel</button>
+</div>
+
+<div class="sheet-bg" id="sheetBg"></div>
+<div class="sheet" id="sheet">
+  <div class="grip"></div>
+  <h2>Materials</h2>
+  <div class="setup" style="margin:-4px 0 12px">Toggle which surfaces show. Chips above the feed do the same thing, quickly.</div>
+  <div id="matList"></div>
+  <h2 style="margin-top:22px">Shops</h2>
+  <div id="shopList"></div>
+
+  <h2 style="margin-top:22px">Excluded <span id="exCountBadge" style="color:var(--dim);font-weight:400"></span></h2>
+  <div class="setup" style="margin:-4px 0 10px">Items, brands, and keywords you've hidden. Un-hide any of them here.</div>
+  <div id="exList"></div>
+  <button class="addbtn" id="exportEx" style="margin-top:12px;background:var(--card);color:var(--s3);border:1px solid var(--line)">⬇ Export excludes.json</button>
+  <div class="setup" style="margin-top:7px;font-size:11.5px">Drop the exported file in your repo so exclusions also stop push alerts, not just hide from the feed. Hiding here is instant and local; the export makes it reach the poller.</div>
+
+  <h2 style="margin-top:22px">Closet backup</h2>
+  <div class="setup" style="margin:-4px 0 10px">Your owned + saved items live on this device. Export to back them up or move to another device.</div>
+  <div class="miniaction">
+    <button id="exportCloset">⬇ Export closet.json</button>
+    <button id="importCloset">⬆ Import closet.json</button>
+  </div>
+  <input type="file" id="importFile" accept="application/json" style="display:none">
+
+  <h2 style="margin-top:22px">Background alerts</h2>
+  <div class="setup">
+    Pushes fire even when this app is closed, via the poller in GitHub Actions:
+    <ol>
+      <li>Install <b>ntfy</b> (App Store, free).</li>
+      <li>Subscribe to your topic: <code id="topicName">nylon-watch-xxxx</code></li>
+      <li>New drops and restocks across enabled shops arrive as push.</li>
+    </ol>
+    Material + gloss filtering here is for browsing. The poller keeps everything it
+    finds in <code>state.json</code>; toggles just hide/show locally.
+  </div>
+</div>
+
+<script>
+const STATE_URL="state.json";
+let DATA=null, sort="rank";
+const filters=new Set();
+let glossMin=0;
+const shopOff=new Set(JSON.parse(localStorage.getItem("nw.shopOff")||"[]"));
+const matOff=new Set(JSON.parse(localStorage.getItem("nw.matOff")||"[]")); // materials user disabled locally
+// exclusion rules — mirror of poller's excludes.json. Hides from feed instantly;
+// export to repo to also stop pushes.
+const EX=JSON.parse(localStorage.getItem("nw.excludes")||'{"items":[],"brands":[],"keywords":[]}');
+function saveEx(){localStorage.setItem("nw.excludes",JSON.stringify(EX));}
+function isExcluded(p){
+  if(EX.items.includes(p.shop+"|"+p.pid))return true;
+  const v=(p.vendor||"").trim().toLowerCase();
+  if(v && EX.brands.some(b=>b.trim().toLowerCase()===v))return true;
+  const t=(p.title||"").toLowerCase();
+  if(EX.keywords.some(k=>k.trim() && t.includes(k.trim().toLowerCase())))return true;
+  return false;
+}
+function exCount(){return EX.items.length+EX.brands.length+EX.keywords.length;}
+
+// ---- digital closet: owned[] (manual) + saved[] (from feed) ----
+const CL=JSON.parse(localStorage.getItem("nw.closet")||'{"owned":[],"saved":[]}');
+if(!CL.owned)CL.owned=[]; if(!CL.saved)CL.saved=[];
+function saveCloset(){localStorage.setItem("nw.closet",JSON.stringify(CL));}
+function isSaved(ekey){return CL.saved.some(s=>s.ekey===ekey);}
+function toggleSave(ekey){
+  const i=CL.saved.findIndex(s=>s.ekey===ekey);
+  if(i>=0){CL.saved.splice(i,1);}
+  else{
+    const p=(DATA.products||[]).find(x=>x.shop+"|"+x.pid===ekey);
+    if(p)CL.saved.push({ekey,title:p.title,vendor:p.vendor,image:p.image,url:p.url,
+      price:p.price,materials:p.materials||[],shop_name:p.shop_name,added:Date.now()});
+  }
+  saveCloset();render();
+}
+function liveFor(ekey){return (DATA.products||[]).find(x=>x.shop+"|"+x.pid===ekey);}
+
+const $=s=>document.querySelector(s);
+const feed=$("#feed"), empty=$("#empty");
+
+function fmtAge(iso){
+  if(!iso)return"—";const d=new Date(iso),m=Math.round((new Date()-d)/60000);
+  if(m<2)return"just now";if(m<60)return m+"m ago";
+  const h=Math.round(m/60);if(h<24)return h+"h ago";return Math.round(h/24)+"d ago";
+}
+
+async function load(){
+  try{
+    const r=await fetch(STATE_URL+"?t="+Date.now(),{cache:"no-store"});
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    DATA=await r.json();
+  }catch(e){DATA={products:[],shop_status:{},generated_at:null,error:e.message,materials_enabled:{}};}
+  // seed local material-off from server defaults the first time only
+  if(!localStorage.getItem("nw.matInit") && DATA.materials_enabled){
+    Object.entries(DATA.materials_enabled).forEach(([m,on])=>{ if(!on) matOff.add(m); });
+    localStorage.setItem("nw.matOff",JSON.stringify([...matOff]));
+    localStorage.setItem("nw.matInit","1");
+  }
+  render();
+}
+
+function activeMaterials(){
+  const all=Object.keys(DATA.materials_enabled||{});
+  return new Set(all.filter(m=>!matOff.has(m)));
+}
+
+function statusBar(){
+  const s=DATA.shop_status||{};
+  const fails=Object.entries(s).filter(([,v])=>!v.ok);
+  const oks=Object.entries(s).filter(([,v])=>v.ok);
+  let html="";
+  if(DATA.error){
+    html=`<div class="err">Couldn't load state.json (${DATA.error}). Once the poller has run once and committed state.json, this fills in.</div>`;
+  }else if(fails.length){
+    html=`<span class="ok">${oks.length} shops live</span> · <span class="err">${fails.length} unreachable: ${fails.map(f=>f[0]).join(", ")}</span>`;
+  }
+  $("#status").innerHTML=html?`<div class="statusbar">${html}</div>`:"";
+}
+
+function passesMaterial(p){
+  // GLOSSY-only items (no material) always pass material filter — they're the visual catch
+  if(!p.materials || !p.materials.length) return true;
+  const act=activeMaterials();
+  return p.materials.some(m=>act.has(m));
+}
+
+function visible(){
+  let list=(DATA.products||[]).filter(p=>!shopOff.has(p.shop));
+  list=list.filter(p=>!isExcluded(p));
+  list=list.filter(passesMaterial);
+  if(glossMin>0) list=list.filter(p=>(p.gloss_score||0)>=glossMin);
+  const q=$("#q").value.trim().toLowerCase();
+  if(q) list=list.filter(p=>(p.title+" "+p.vendor+" "+p.type+" "+(p.materials||[]).join(" ")+" "+(p.hits||[]).join(" ")).toLowerCase().includes(q));
+  if(filters.size){
+    list=list.filter(p=>{
+      for(const f of filters){
+        if(f==="instock"){if(!p.any_available)return false;}
+        else if(f==="GLOSSY"){if(p.keep_reason!=="GLOSSY")return false;}
+        else if(p.flag!==f)return false;
+      }
+      return true;
+    });
+  }
+  const r=p=>p.flag==="RESTOCK"?2:p.flag==="NEW"?1:0;
+  if(sort==="rank") list.sort((a,b)=>r(b)-r(a)||((b.gloss_score||0)+b.fit_score)-((a.gloss_score||0)+a.fit_score));
+  else if(sort==="gloss") list.sort((a,b)=>(b.gloss_score||0)-(a.gloss_score||0));
+  else if(sort==="new") list.sort((a,b)=>(b.published_at||"").localeCompare(a.published_at||""));
+  else if(sort==="price") list.sort((a,b)=>(a.price??1e9)-(b.price??1e9));
+  return list;
+}
+
+function card(p){
+  const b=[];
+  if(p.flag==="NEW")b.push(`<span class="badge new">NEW</span>`);
+  if(p.flag==="RESTOCK")b.push(`<span class="badge restock">RESTOCK</span>`);
+  if(p.keep_reason==="GLOSSY")b.push(`<span class="badge glossy">SHINE</span>`);
+  const badges=b.length?`<div class="badges">${b.join("")}</div>`:"";
+  const sold=!p.any_available?`<div class="soldout">SOLD OUT</div>`:"";
+  const img=p.image?`<img loading="lazy" src="${p.image}" alt="" onerror="this.parentNode.classList.add('ph');this.remove()">`:"";
+  const g=p.gloss_score;
+  const gmeter=(g!=null)?`<div class="gmeter"><div class="bar"><div class="fill" style="width:${g}%"></div></div><span class="num">${g}</span></div>`:"";
+  const restocked=new Set(p.restocked_sizes||[]);
+  const sizes=(p.variants||[]).map(v=>{
+    const cls=restocked.has(v.title)?"sz restocked":v.available?"sz on":"sz";
+    return `<span class="${cls}">${v.title||"OS"}</span>`;}).join("");
+  const mtags=(p.materials||[]).slice(0,3).map(m=>`<span class="mtag">${m.replace("_","/")}</span>`).join("");
+  const price=p.price?"$"+Math.round(p.price):"";
+  const ekey=p.shop+"|"+p.pid;
+  const saved=isSaved(ekey)?"on":"";
+  return `<a class="card" href="${p.url}" target="_blank" rel="noopener" data-ekey="${ekey}">
+    <button class="hidebtn" data-hide="${ekey}" title="Hide / exclude" aria-label="Hide or exclude this item">⊘</button>
+    <button class="savebtn ${saved}" data-save="${ekey}" title="Save to closet" aria-label="Save to closet">${saved?"♥":"♡"}</button>
+    <div class="thumb">${badges}${img}${gmeter}${sold}</div>
+    <div class="meta">
+      <div class="vendor">${p.vendor||p.shop_name}</div>
+      <div class="title">${p.title}</div>
+      <div class="mtags">${mtags}</div>
+      <div class="sizes">${sizes}</div>
+      <div class="row"><span class="price">${price}</span><span class="shop">${p.shop_name}</span></div>
+    </div></a>`;
+}
+
+let view="feed", ctab="saved", menuTarget=null;
+
+function render(){
+  statusBar();
+  // view chrome
+  $("#feedControls").style.display = view==="feed"?"":"none";
+  $("#closetControls").style.display = view==="closet"?"":"none";
+  $("#viewsw").querySelectorAll("[data-view]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.view===view));
+  $("#closetN").textContent = (CL.saved.length+CL.owned.length)?`(${CL.saved.length+CL.owned.length})`:"";
+
+  if(view==="feed"){
+    const list=visible();
+    feed.innerHTML=list.map(card).join("");
+    empty.style.display=list.length?"none":"block";
+    empty.querySelector(".big").textContent="Nothing matches yet.";
+  }else{
+    renderCloset();
+  }
+  $("#count").textContent=(DATA.products||[]).filter(p=>!shopOff.has(p.shop)&&!isExcluded(p)&&passesMaterial(p)).length;
+  $("#updated").textContent=fmtAge(DATA.generated_at);
+  const nf=(DATA.products||[]).filter(p=>["NEW","RESTOCK"].includes(p.flag)).length;
+  $("#flagcount").innerHTML=nf?`<span style="color:var(--new)">${nf} flagged</span>`:"";
+  $("#visnote").innerHTML=(DATA.visual_on===false)?`<span style="color:var(--dim)">visual off</span>`:"";
+  renderMats(); renderShops(); renderExcluded();
+}
+
+function closetCard(it,kind){
+  // saved items can be cross-referenced to live state for restock/availability
+  const live = kind==="saved" ? liveFor(it.ekey) : null;
+  let badge="";
+  if(live){
+    if(live.flag==="RESTOCK")badge=`<div class="badges"><span class="badge restock">RESTOCK</span></div>`;
+    else if(!live.any_available)badge=`<div class="badges"><span class="badge" style="background:var(--dim)">SOLD OUT</span></div>`;
+    else badge=`<div class="badges"><span class="badge" style="background:var(--new)">IN STOCK</span></div>`;
+  }
+  const img=it.image?`<img loading="lazy" src="${it.image}" alt="" onerror="this.parentNode.classList.add('ph');this.remove()">`:`<div class="thumb ph">no image</div>`;
+  const mtags=(it.materials||[]).slice(0,3).map(m=>`<span class="mtag">${(m||"").replace("_","/")}</span>`).join("");
+  const sub = kind==="owned" ? (it.size?`Size ${it.size}`:"") : (it.price?"$"+Math.round(it.price):"");
+  const rm = kind==="saved"
+    ? `<button class="hidebtn" data-unsave="${it.ekey}" title="Remove from saved">♥</button>`
+    : `<button class="hidebtn" data-removeowned="${it.id}" title="Remove from closet">✕</button>`;
+  const href = it.url||"#";
+  const tag = it.url?`<a class="card" href="${href}" target="_blank" rel="noopener">`:`<div class="card">`;
+  const endtag = it.url?`</a>`:`</div>`;
+  return `${tag}${rm}
+    <div class="thumb">${badge}${img}</div>
+    <div class="meta">
+      <div class="vendor">${it.vendor||it.shop_name||""}</div>
+      <div class="title">${it.title||"(untitled)"}</div>
+      <div class="mtags">${mtags}</div>
+      <div class="row"><span class="price">${sub||""}</span><span class="shop">${it.notes||""}</span></div>
+    </div>${endtag}`;
+}
+
+function renderCloset(){
+  $("#closetTabs").querySelectorAll("[data-ctab]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.ctab===ctab));
+  if(ctab==="add"){ renderAddForm(); empty.style.display="none"; return; }
+  const items = ctab==="saved" ? CL.saved : CL.owned;
+  feed.innerHTML = items.map(it=>closetCard(it,ctab)).join("");
+  if(!items.length){
+    empty.style.display="block";
+    empty.querySelector(".big").textContent = ctab==="saved" ? "No saved items yet." : "Nothing in your closet yet.";
+    empty.lastChild.textContent = ctab==="saved"
+      ? " Tap ♡ on any feed item to save it. Saved items show live restock status here."
+      : " Use + Add owned to record what you have.";
+  }else{empty.style.display="none";}
+}
+
+function renderAddForm(){
+  feed.innerHTML=`<div style="grid-column:1/-1">
+    <div class="addform">
+      <input id="ao_title" placeholder="Item name (e.g. Pertex Shell Jacket)">
+      <div class="two">
+        <input id="ao_vendor" placeholder="Brand">
+        <input id="ao_size" placeholder="Size">
+      </div>
+      <input id="ao_material" placeholder="Material (e.g. nylon, latex, satin)">
+      <input id="ao_url" placeholder="Link (optional)">
+      <input id="ao_image" placeholder="Image URL (optional)">
+      <input id="ao_notes" placeholder="Notes (optional)">
+      <button class="addbtn" id="ao_save">Add to closet</button>
+    </div></div>`;
+}
+
+function renderExcluded(){
+  $("#exCountBadge").textContent = exCount()?`(${exCount()})`:"";
+  const rows=[];
+  EX.items.forEach(k=>{
+    const p=(DATA.products||[]).find(x=>x.shop+"|"+x.pid===k);
+    const lab=p?`${p.vendor||""} — ${p.title}`:k;
+    rows.push(`<div class="exrow"><div style="overflow:hidden"><span class="typ">item</span><span class="lab">${lab}</span></div><button class="undo" data-unx="item:${k}">Un-hide</button></div>`);
+  });
+  EX.brands.forEach(b=>rows.push(`<div class="exrow"><div><span class="typ">brand</span><span class="lab">${b}</span></div><button class="undo" data-unx="brand:${b}">Un-hide</button></div>`));
+  EX.keywords.forEach(k=>rows.push(`<div class="exrow"><div><span class="typ">word</span><span class="lab">"${k}"</span></div><button class="undo" data-unx="keyword:${k}">Un-hide</button></div>`));
+  $("#exList").innerHTML = rows.join("") || `<div class="shopnote">Nothing excluded yet. Tap ⊘ on any item to hide it, its brand, or a keyword.</div>`;
+}
+
+function renderMats(){
+  const me=DATA.materials_enabled||{};
+  const chips=Object.keys(me).map(m=>{
+    const on=!matOff.has(m);
+    return `<button class="chip" data-mat="${m}" aria-pressed="${on}">${m.replace("_","/")}</button>`;
+  }).join("");
+  const row=$("#mats");
+  row.innerHTML=`<span class="mlabel">Material</span>`+chips;
+  // sheet list with toggles
+  $("#matList").innerHTML=Object.keys(me).map(m=>{
+    const on=!matOff.has(m);
+    return `<div class="shoprow"><div class="shopname">${m.replace("_","/")}</div>
+      <div class="toggle ${on?'on':''}" data-mattoggle="${m}"></div></div>`;
+  }).join("")||`<div class="shopnote">No materials reported yet.</div>`;
+}
+
+function renderShops(){
+  const seen={};
+  (DATA.products||[]).forEach(p=>{seen[p.shop]=p.shop_name;});
+  Object.keys(DATA.shop_status||{}).forEach(id=>{if(!seen[id])seen[id]=id;});
+  $("#shopList").innerHTML=Object.entries(seen).map(([id,name])=>{
+    const on=!shopOff.has(id);const st=(DATA.shop_status||{})[id];
+    const note=st?(st.ok?`${st.count??0} pieces`:`unreachable (${st.error||"error"})`):"";
+    return `<div class="shoprow"><div><div class="shopname">${name}</div><div class="shopnote">${note}</div></div>
+      <div class="toggle ${on?'on':''}" data-shop="${id}"></div></div>`;
+  }).join("")||`<div class="shopnote">No shops reported yet.</div>`;
+}
+
+// events
+$("#q").addEventListener("input",render);
+$("#gloss").addEventListener("input",e=>{
+  glossMin=+e.target.value;
+  $("#glossval").textContent=glossMin?glossMin+"+":"off";
+  render();
+});
+$("#pills").addEventListener("click",e=>{
+  const b=e.target.closest(".pill");if(!b)return;
+  if(b.dataset.sort){sort=b.dataset.sort;
+    $("#pills").querySelectorAll("[data-sort]").forEach(x=>x.setAttribute("aria-pressed",x===b));}
+  else if(b.dataset.filter){const f=b.dataset.filter,on=b.getAttribute("aria-pressed")==="true";
+    if(on){filters.delete(f);b.setAttribute("aria-pressed","false");}
+    else{filters.add(f);b.setAttribute("aria-pressed","true");}}
+  render();
+});
+function toggleMat(m){
+  if(matOff.has(m))matOff.delete(m);else matOff.add(m);
+  localStorage.setItem("nw.matOff",JSON.stringify([...matOff]));render();
+}
+$("#mats").addEventListener("click",e=>{const c=e.target.closest(".chip");if(c)toggleMat(c.dataset.mat);});
+$("#matList").addEventListener("click",e=>{const t=e.target.closest(".toggle");if(t)toggleMat(t.dataset.mattoggle);});
+$("#shopList").addEventListener("click",e=>{
+  const t=e.target.closest(".toggle");if(!t||!t.dataset.shop)return;
+  const id=t.dataset.shop;if(shopOff.has(id))shopOff.delete(id);else shopOff.add(id);
+  localStorage.setItem("nw.shopOff",JSON.stringify([...shopOff]));render();
+});
+function openSheet(o){$("#sheet").classList.toggle("open",o);$("#sheetBg").classList.toggle("open",o);}
+$("#openSheet").addEventListener("click",()=>openSheet(true));
+$("#sheetBg").addEventListener("click",()=>openSheet(false));
+
+// ---- view switch ----
+$("#viewsw").addEventListener("click",e=>{
+  const b=e.target.closest("[data-view]");if(!b)return;
+  view=b.dataset.view;render();
+});
+$("#closetTabs").addEventListener("click",e=>{
+  const b=e.target.closest("[data-ctab]");if(!b)return;
+  ctab=b.dataset.ctab;render();
+});
+
+// ---- card actions: hide opens menu, save toggles, delegated on feed ----
+function openMenu(ekey){
+  menuTarget=ekey;
+  const p=(DATA.products||[]).find(x=>x.shop+"|"+x.pid===ekey);
+  $("#menuTitle").textContent="Hide / exclude";
+  $("#menuSub").textContent=p?`${p.vendor||""} — ${p.title}`:"";
+  $("#exItemSub").textContent=p?p.title:"";
+  $("#exBrandSub").textContent=p&&p.vendor?`Every ${p.vendor} item`:"";
+  // hide brand option if no vendor
+  document.querySelector('[data-ex="brand"]').style.display=(p&&p.vendor)?"":"none";
+  $("#menu").classList.add("open");$("#menuBg").classList.add("open");
+}
+function closeMenu(){$("#menu").classList.remove("open");$("#menuBg").classList.remove("open");menuTarget=null;}
+$("#menuBg").addEventListener("click",closeMenu);
+$("#menuCancel").addEventListener("click",closeMenu);
+$("#menu").addEventListener("click",e=>{
+  const b=e.target.closest("[data-ex]");if(!b||!menuTarget)return;
+  const p=(DATA.products||[]).find(x=>x.shop+"|"+x.pid===menuTarget);
+  const kind=b.dataset.ex;
+  if(kind==="item"){ if(!EX.items.includes(menuTarget))EX.items.push(menuTarget); }
+  else if(kind==="brand"&&p&&p.vendor){ if(!EX.brands.some(x=>x.toLowerCase()===p.vendor.toLowerCase()))EX.brands.push(p.vendor); }
+  else if(kind==="keyword"){
+    const def=p?(p.title.split(/\s+/)[0]||""):"";
+    const kw=prompt("Hide any item whose title contains this word:",def);
+    if(kw&&kw.trim()){ if(!EX.keywords.includes(kw.trim()))EX.keywords.push(kw.trim()); }
+    else { closeMenu(); return; }
+  }
+  saveEx();closeMenu();render();
+});
+
+feed.addEventListener("click",e=>{
+  const hb=e.target.closest("[data-hide]");
+  const sb=e.target.closest("[data-save]");
+  const us=e.target.closest("[data-unsave]");
+  const ro=e.target.closest("[data-removeowned]");
+  if(hb){e.preventDefault();e.stopPropagation();openMenu(hb.dataset.hide);return;}
+  if(sb){e.preventDefault();e.stopPropagation();toggleSave(sb.dataset.save);return;}
+  if(us){e.preventDefault();e.stopPropagation();toggleSave(us.dataset.unsave);return;}
+  if(ro){e.preventDefault();e.stopPropagation();
+    const i=CL.owned.findIndex(o=>o.id===ro.dataset.removeowned);
+    if(i>=0){CL.owned.splice(i,1);saveCloset();render();}return;}
+  // add-owned form submit
+  if(e.target.id==="ao_save"){
+    const g=id=>{const el=document.getElementById(id);return el?el.value.trim():"";};
+    const title=g("ao_title");
+    if(!title){alert("Give it a name at least.");return;}
+    CL.owned.push({id:"o"+Date.now(),title,vendor:g("ao_vendor"),size:g("ao_size"),
+      materials:g("ao_material")?g("ao_material").split(",").map(s=>s.trim()).filter(Boolean):[],
+      url:g("ao_url"),image:g("ao_image"),notes:g("ao_notes"),added:Date.now()});
+    saveCloset();ctab="owned";render();
+  }
+});
+
+// ---- excluded list undo ----
+$("#exList").addEventListener("click",e=>{
+  const b=e.target.closest("[data-unx]");if(!b)return;
+  const [type,...rest]=b.dataset.unx.split(":");const val=rest.join(":");
+  if(type==="item")EX.items=EX.items.filter(x=>x!==val);
+  else if(type==="brand")EX.brands=EX.brands.filter(x=>x!==val);
+  else if(type==="keyword")EX.keywords=EX.keywords.filter(x=>x!==val);
+  saveEx();render();
+});
+
+// ---- exports ----
+function downloadJSON(obj,name){
+  const blob=new Blob([JSON.stringify(obj,null,2)],{type:"application/json"});
+  const u=URL.createObjectURL(blob);const a=document.createElement("a");
+  a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);
+}
+$("#exportEx").addEventListener("click",()=>downloadJSON(
+  {items:EX.items,brands:EX.brands,keywords:EX.keywords},"excludes.json"));
+$("#exportCloset").addEventListener("click",()=>downloadJSON(CL,"closet.json"));
+$("#importCloset").addEventListener("click",()=>$("#importFile").click());
+$("#importFile").addEventListener("change",e=>{
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{try{
+    const d=JSON.parse(r.result);
+    if(Array.isArray(d.owned))CL.owned=d.owned;
+    if(Array.isArray(d.saved))CL.saved=d.saved;
+    saveCloset();render();alert("Closet imported.");
+  }catch(err){alert("Couldn't read that file.");}};
+  r.readAsText(f);
+});
+
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)load();});
+
+load();
+setInterval(load,5*60*1000);
+</script>
+</body>
+</html>

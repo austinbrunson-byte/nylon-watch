@@ -1,0 +1,74 @@
+[
+  {
+    "id": "satisfy",
+    "name": "Satisfy (direct)",
+    "site": "https://satisfyrunning.com",
+    "products_url": "https://satisfyrunning.com/products.json",
+    "enabled": true,
+    "note": "Brand Shopify. Technical running nylon, shells."
+  },
+  {
+    "id": "gramicci",
+    "name": "Gramicci (direct)",
+    "site": "https://gramicci.com",
+    "products_url": "https://gramicci.com/products.json",
+    "enabled": true,
+    "note": "Brand Shopify. Nylon flares, shells, and wander collabs."
+  },
+  {
+    "id": "rains",
+    "name": "Rains (direct)",
+    "site": "https://www.us.rains.com",
+    "products_url": "https://www.us.rains.com/products.json",
+    "enabled": true,
+    "note": "Brand Shopify. High-gloss PU rainwear \u2014 shiny black/amber, String Overcoat. Core rainwear source."
+  },
+  {
+    "id": "uptherestore",
+    "name": "Up There",
+    "site": "https://uptherestore.com",
+    "products_url": "https://uptherestore.com/products.json",
+    "enabled": true,
+    "note": "And Wander, Goldwin, Snow Peak, Gramicci, Satisfy. Big catalog."
+  },
+  {
+    "id": "yardsstore",
+    "name": "Yards Store",
+    "site": "https://www.yardsstore.com",
+    "products_url": "https://www.yardsstore.com/products.json",
+    "enabled": true,
+    "note": "And Wander, Goldwin, Snow Peak, Gramicci. Ships intl."
+  },
+  {
+    "id": "havn",
+    "name": "HAVN",
+    "site": "https://havnstore.com",
+    "products_url": "https://havnstore.com/products.json",
+    "enabled": true,
+    "note": "Goldwin/Goldwin 0, And Wander, Snow Peak, ROA, Satisfy."
+  },
+  {
+    "id": "distance",
+    "name": "Distance",
+    "site": "https://distance-store.com",
+    "products_url": "https://distance-store.com/products.json",
+    "enabled": true,
+    "note": "Satisfy, District Vision, technical shells. EU sizing."
+  },
+  {
+    "id": "honour",
+    "name": "Honour Clothing",
+    "site": "https://www.honourclothing.com",
+    "products_url": "https://www.honourclothing.com/products.json",
+    "enabled": false,
+    "note": "Shopify. Latex/rubber, PVC, wetlook fashion. ENABLE if you want the high-shine end. Adjacent to fetish retail \u2014 disabled by default; turn on deliberately."
+  },
+  {
+    "id": "minimallatex",
+    "name": "MinimalLatex",
+    "site": "https://www.minimallatex.com",
+    "products_url": "https://www.minimallatex.com/products.json",
+    "enabled": false,
+    "note": "Shopify. Minimal/tailored latex, clean silhouettes. Disabled by default."
+  }
+]

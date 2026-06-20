@@ -1,0 +1,6 @@
+{
+  "_comment": "Items/brands/keywords to hide from the feed AND suppress from push alerts. Generate this from the app (≡ sheet -> Export excludes.json) and replace this file, or edit by hand. items use 'shop|productid' (shown in the app); brands match the vendor name (case-insensitive); keywords match anywhere in the title (case-insensitive).",
+  "items": [],
+  "brands": [],
+  "keywords": []
+}

@@ -1,0 +1,62 @@
+{
+  "_comment": "Material-aware taxonomy for NYLON WATCH. Each material block: terms that RAISE fit when present in title/tag/type, plus 'avoid' terms that lower it. 'weight' scales matches. 'enabled' is the default; the app overrides per-material via its own toggle state. The visual gloss stage is separate from all of this and configured under 'visual'.",
+
+  "default_floor": 0,
+
+  "visual": {
+    "enabled": true,
+    "max_images_per_run": 220,
+    "max_side_px": 320,
+    "gloss_floor_for_unkeyworded": 62,
+    "_note": "If a product matches NO material keyword but its image gloss >= gloss_floor_for_unkeyworded, it is kept and flagged GLOSSY — this is what catches shiny garments whose listings never say so. max_images_per_run caps work so the Action stays fast/free; newest + highest-keyword items are imaged first."
+  },
+
+  "materials": {
+    "nylon": {
+      "enabled": true,
+      "weight": 1,
+      "terms": ["nylon","taffeta","ripstop","ny/co","pertex","tyvek","cordura","shell jacket","windbreaker","anorak","coach jacket","coaches jacket","track jacket","cagoule","smock","packable","octa","gore-tex","mothtech","auralite","peaceshell","and wander","goldwin","snow peak","satisfy","gramicci","nanamica","arc'teryx","descente"],
+      "avoid": ["cotton nylon blend tee"]
+    },
+    "satin": {
+      "enabled": true,
+      "weight": 1,
+      "terms": ["satin","sateen","charmeuse","silk twill","liquid","high shine","high-shine","shiny","glossy","sheen","lustre","luster","polished","mirror","metallic","lame","lamé","duchesse"],
+      "avoid": ["matte satin","satin finish hardware","brushed"]
+    },
+    "latex": {
+      "enabled": false,
+      "weight": 2,
+      "terms": ["latex","rubber","chlorinated","moulded","molded latex","sheet latex","catsuit","second skin"],
+      "avoid": ["latex-free","latex paint","rubberised cotton"]
+    },
+    "pvc_vinyl": {
+      "enabled": false,
+      "weight": 2,
+      "terms": ["pvc","vinyl","plastic","clear plastic","transparent","see-through","tpu film","glass-clear"],
+      "avoid": ["pvc patch","vinyl sticker","pvc pipe"]
+    },
+    "wetlook": {
+      "enabled": true,
+      "weight": 2,
+      "terms": ["wet look","wet-look","wetlook","liquid","oil slick","oil-slick","coated","wax coated","waxed","glazed","lacquer","lacquered","slick","glossy coated","high gloss","high-gloss"],
+      "avoid": []
+    },
+    "patent": {
+      "enabled": true,
+      "weight": 2,
+      "terms": ["patent","patent leather","faux patent","gloss leather","mirror leather","crinkle patent"],
+      "avoid": []
+    },
+    "rainwear": {
+      "enabled": true,
+      "weight": 1,
+      "terms": ["rain","raincoat","rainwear","waterproof","rubberised","rubberized","pu coated","pu-coated","rains","slicker","sou'wester","oilskin","mackintosh","mac coat","poncho","overcoat shiny","fisherman"],
+      "avoid": ["rain check","water resistant dwr only"]
+    }
+  },
+
+  "global_avoid": ["sock","socks","beanie","fragrance","perfume","candle","incense","mug","sticker","keyring","pin badge","tote bag canvas","wallet","sunglasses","book","poster","gift card","cotton tee","pocket tee","denim jean","chino","corduroy","lambswool","cashmere knit","fleece jacket","flannel shirt"],
+
+  "global_avoid_weight": 3
+}
