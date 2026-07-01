@@ -44,6 +44,7 @@ STATE_PATH = os.path.join(HERE, "state.json")
 TAX_PATH = os.path.join(HERE, "taxonomy.json")
 IMGCACHE_PATH = os.path.join(HERE, "imgcache.json")
 EXCLUDES_PATH = os.path.join(HERE, "excludes.json")
+RATINGS_PATH = os.path.join(HERE, "ratings.json")
 
 USER_AGENT = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 "
              "(KHTML, like Gecko) Version/17.0 Safari/605.1.15 NYLON-WATCH/2.0")
@@ -407,6 +408,11 @@ def main():
     state = load_json(STATE_PATH, {})
     imgcache = load_json(IMGCACHE_PATH, {})
     excludes = load_json(EXCLUDES_PATH, {})
+    ratings = load_json(RATINGS_PATH, {})
+    # your shininess verdicts: 'matte' items are hidden like excludes; 'shiny'
+    # items are always kept, pinned, and flagged PICK — your call beats the score.
+    matte_set = set(ratings.get("matte", []))
+    shiny_set = set(ratings.get("shiny", []))
 
     prev = {p["shop"] + "|" + p["pid"]: p for p in state.get("products", [])}
     alerted = set(state.get("alerted_ids", []))
@@ -446,6 +452,13 @@ def main():
     if n_disqualified:
         log(f"disqualified {n_disqualified} products via taxonomy disqualifiers")
 
+    # your "not shiny" verdicts hide those items everywhere (feed + any push)
+    n_before = len(raw_normed)
+    raw_normed = [p for p in raw_normed if (p["shop"] + "|" + p["pid"]) not in matte_set]
+    n_matte = n_before - len(raw_normed)
+    if n_matte:
+        log(f"hid {n_matte} products you rated 'not shiny' (ratings.json)")
+
     candidates = [p for p in raw_normed if p["fit_score"] > 0 or
                   (not p["materials"] and p["fit_score"] >= 0)]
     analyzed = run_visual(candidates, tax, imgcache)
@@ -454,9 +467,13 @@ def main():
     current = []
     for p in raw_normed:
         keep, why = keep_decision(p, tax)
-        if keep:
-            p["keep_reason"] = why
+        is_pick = (p["shop"] + "|" + p["pid"]) in shiny_set
+        if keep or is_pick:                 # a 'shiny' pick is kept even if the
+            p["keep_reason"] = why or "PICK"  # score/keywords would have dropped it
             p["tone"], p["desire"] = tone_and_desire(p, tax)
+            if is_pick:
+                p["pick"] = True
+                p["desire"] += 1000         # your picks rank above everything
             current.append(p)
 
     counts = {}
@@ -560,6 +577,8 @@ def main():
         "gloss_floor": tax.get("visual", {}).get("gloss_floor_for_unkeyworded", 62),
         "excluded_count": n_excluded,
         "disqualified_count": n_disqualified,
+        "rated_matte_count": n_matte,
+        "rated_shiny_count": sum(1 for p in current if p.get("pick")),
         "excludes_active": bool(excludes.get("items") or excludes.get("brands") or excludes.get("keywords")),
         "product_count": len(current),
         "event_count": len(events),

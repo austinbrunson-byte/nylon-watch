@@ -109,6 +109,16 @@
   .hidebtn:active,.savebtn:active{transform:scale(.9)}
   .savebtn.on{color:var(--restock);border-color:var(--restock);background:rgba(230,179,255,.12)}
 
+  /* shiny/matte rating — your own judgment, feeds the algorithm */
+  .rate{position:absolute;left:7px;bottom:7px;z-index:3;display:flex;gap:5px}
+  .rate button{width:26px;height:26px;border-radius:7px;border:1px solid var(--line);
+    background:rgba(10,10,15,.66);backdrop-filter:blur(4px);color:var(--mut);
+    font-size:13px;display:grid;place-items:center;cursor:pointer;line-height:1}
+  .rate button:active{transform:scale(.9)}
+  .rate button.yes.on{color:#0a0a0f;background:var(--s3);border-color:transparent;font-weight:800}
+  .rate button.no.on{color:#0a0a0f;background:#e6a3a3;border-color:transparent;font-weight:800}
+  .badge.pick{background:var(--s3)}
+
   /* exclude menu (mini popover, centered) */
   .menu-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:70;opacity:0;pointer-events:none;transition:opacity .16s}
   .menu-bg.open{opacity:1;pointer-events:auto}
@@ -222,6 +232,7 @@
     <button class="pill restock" data-filter="RESTOCK" aria-pressed="false">● Restock</button>
     <button class="pill glossy" data-filter="GLOSSY" aria-pressed="false">● Unlisted shine</button>
     <button class="pill" data-filter="priority" aria-pressed="false">★ Priority tone</button>
+    <button class="pill" data-filter="mine" aria-pressed="false">✓ My picks</button>
     <button class="pill" data-filter="instock" aria-pressed="false">In stock</button>
   </div>
   <div class="mats" id="mats"><span class="mlabel">Material</span></div>
@@ -276,6 +287,10 @@
   <button class="addbtn" id="exportEx" style="margin-top:12px;background:var(--card);color:var(--s3);border:1px solid var(--line)">⬇ Export excludes.json</button>
   <div class="setup" style="margin-top:7px;font-size:11.5px">Drop the exported file in your repo so exclusions also stop push alerts, not just hide from the feed. Hiding here is instant and local; the export makes it reach the poller.</div>
 
+  <h2 style="margin-top:22px">Shininess ratings <span id="ratCountBadge" style="color:var(--dim);font-weight:400"></span></h2>
+  <div class="setup" style="margin:-4px 0 10px">Tap <b>✓</b> on a card when it's shiny enough (it pins to the top and is always kept) or <b>✕</b> when it isn't (it's hidden). These are <i>your</i> calls. Export and drop <code>ratings.json</code> in your repo and the poller obeys them on every run and device — your judgment steers the algorithm, not just this screen.</div>
+  <button class="addbtn" id="exportRat" style="background:var(--card);color:var(--s3);border:1px solid var(--line)">⬇ Export ratings.json</button>
+
   <h2 style="margin-top:22px">Closet backup</h2>
   <div class="setup" style="margin:-4px 0 10px">Your owned + saved items live on this device. Export to back them up or move to another device.</div>
   <div class="miniaction">
@@ -321,6 +336,23 @@ function isExcluded(p){
   return false;
 }
 function exCount(){return EX.items.length+EX.brands.length+EX.keywords.length;}
+
+// ---- your shininess judgment: +1 = shiny (boost), -1 = not shiny (hide) ----
+// Mirrors the poller's ratings.json. Rating instantly reshapes the feed; export
+// the file to the repo so the poller honors your calls on every run + device.
+const RAT=JSON.parse(localStorage.getItem("nw.ratings")||"{}");
+function saveRat(){localStorage.setItem("nw.ratings",JSON.stringify(RAT));}
+function ratingOf(p){return RAT[p.shop+"|"+p.pid]||0;}
+function setRating(ekey,val){
+  if(RAT[ekey]===val)delete RAT[ekey]; else RAT[ekey]=val;
+  saveRat();render();
+}
+function ratCounts(){let s=0,m=0;for(const k in RAT){RAT[k]===1?s++:RAT[k]===-1?m++:0;}return{s,m};}
+function ratingsExport(){
+  const shiny=[],matte=[];
+  for(const k in RAT){RAT[k]===1?shiny.push(k):RAT[k]===-1?matte.push(k):0;}
+  return {shiny,matte};
+}
 
 // ---- digital closet: owned[] (manual) + saved[] (from feed) ----
 const CL=JSON.parse(localStorage.getItem("nw.closet")||'{"owned":[],"saved":[]}');
@@ -397,6 +429,8 @@ function passesMaterial(p){
 function visible(){
   let list=(DATA.products||[]).filter(p=>!shopOff.has(p.shop));
   list=list.filter(p=>!isExcluded(p));
+  // your "not shiny" verdict hides the item (unless you're reviewing your picks)
+  if(!filters.has("mine")) list=list.filter(p=>ratingOf(p)!==-1);
   list=list.filter(passesMaterial);
   if(glossMin>0) list=list.filter(p=>(p.gloss_score||0)>=glossMin);
   const q=$("#q").value.trim().toLowerCase();
@@ -407,6 +441,7 @@ function visible(){
         if(f==="instock"){if(!p.any_available)return false;}
         else if(f==="GLOSSY"){if(p.keep_reason!=="GLOSSY")return false;}
         else if(f==="priority"){if(!["colored","metallic","wetlook_black"].includes(p.tone))return false;}
+        else if(f==="mine"){if(ratingOf(p)!==1)return false;}
         else if(p.flag!==f)return false;
       }
       return true;
@@ -414,8 +449,9 @@ function visible(){
   }
   const r=p=>p.flag==="RESTOCK"?2:p.flag==="NEW"?1:0;
   // 'desire' = gloss + tone bonus/penalty (from the poller). Falls back to
-  // gloss+fit for items scored before tone ranking existed.
-  const des=p=>(p.desire!=null)?p.desire:((p.gloss_score||0)+p.fit_score);
+  // gloss+fit for items scored before tone ranking existed. Items you marked
+  // shiny get pinned to the top (+1000) — your judgment outranks the score.
+  const des=p=>((p.desire!=null)?p.desire:((p.gloss_score||0)+p.fit_score))+(ratingOf(p)===1?1000:0);
   if(sort==="rank") list.sort((a,b)=>r(b)-r(a)||des(b)-des(a));
   else if(sort==="gloss") list.sort((a,b)=>(b.gloss_score||0)-(a.gloss_score||0));
   else if(sort==="new") list.sort((a,b)=>(b.published_at||"").localeCompare(a.published_at||""));
@@ -424,11 +460,18 @@ function visible(){
 }
 
 function card(p){
+  const ekey=p.shop+"|"+p.pid;
+  const rv=RAT[ekey]||0;
   const b=[];
+  if(rv===1||p.pick)b.push(`<span class="badge pick">PICK</span>`);
   if(p.flag==="NEW")b.push(`<span class="badge new">NEW</span>`);
   if(p.flag==="RESTOCK")b.push(`<span class="badge restock">RESTOCK</span>`);
   if(p.keep_reason==="GLOSSY")b.push(`<span class="badge glossy">SHINE</span>`);
   const badges=b.length?`<div class="badges">${b.join("")}</div>`:"";
+  const rate=`<div class="rate">
+    <button class="yes ${rv===1?'on':''}" data-rateyes="${esc(ekey)}" title="Shiny enough — pin & keep" aria-label="Mark shiny">✓</button>
+    <button class="no ${rv===-1?'on':''}" data-rateno="${esc(ekey)}" title="Not shiny — hide it" aria-label="Mark not shiny">✕</button>
+  </div>`;
   const sold=!p.any_available?`<div class="soldout">SOLD OUT</div>`:"";
   const img=p.image?`<img loading="lazy" src="${esc(p.image)}" alt="" onerror="this.parentNode.classList.add('ph');this.remove()">`:"";
   const g=p.gloss_score;
@@ -441,12 +484,11 @@ function card(p){
   const TONE_LABEL={colored:"Colour",metallic:"Metallic",wetlook_black:"Wet black",black_satin:"Satin"};
   const toneTag=(p.tone&&TONE_LABEL[p.tone])?`<span class="tone ${p.tone}">${TONE_LABEL[p.tone]}</span>`:"";
   const price=p.price?"$"+Math.round(p.price):"";
-  const ekey=p.shop+"|"+p.pid;
   const saved=isSaved(ekey)?"on":"";
   return `<a class="card" href="${esc(p.url)}" target="_blank" rel="noopener" data-ekey="${esc(ekey)}">
     <button class="hidebtn" data-hide="${esc(ekey)}" title="Hide / exclude" aria-label="Hide or exclude this item">⊘</button>
     <button class="savebtn ${saved}" data-save="${esc(ekey)}" title="Save to closet" aria-label="Save to closet">${saved?"♥":"♡"}</button>
-    <div class="thumb">${badges}${img}${gmeter}${sold}</div>
+    <div class="thumb">${badges}${img}${gmeter}${sold}${rate}</div>
     <div class="meta">
       <div class="vendor">${esc(p.vendor||p.shop_name)}</div>
       <div class="title">${esc(p.title)}</div>
@@ -478,6 +520,8 @@ function render(){
   const nf=(DATA.products||[]).filter(p=>["NEW","RESTOCK"].includes(p.flag)).length;
   $("#flagcount").innerHTML=nf?`<span style="color:var(--new)">${nf} flagged</span>`:"";
   $("#visnote").innerHTML=(DATA.visual_on===false)?`<span style="color:var(--dim)">visual off</span>`:"";
+  const rc=ratCounts();
+  $("#ratCountBadge").textContent=(rc.s||rc.m)?`(${rc.s} shiny · ${rc.m} not)`:"";
   renderMats(); renderShops(); renderExcluded();
 }
 
@@ -679,6 +723,10 @@ feed.addEventListener("click",e=>{
   const sb=e.target.closest("[data-save]");
   const us=e.target.closest("[data-unsave]");
   const ro=e.target.closest("[data-removeowned]");
+  const ry=e.target.closest("[data-rateyes]");
+  const rn=e.target.closest("[data-rateno]");
+  if(ry){e.preventDefault();e.stopPropagation();setRating(ry.dataset.rateyes,1);return;}
+  if(rn){e.preventDefault();e.stopPropagation();setRating(rn.dataset.rateno,-1);return;}
   if(hb){e.preventDefault();e.stopPropagation();openMenu(hb.dataset.hide);return;}
   if(sb){e.preventDefault();e.stopPropagation();toggleSave(sb.dataset.save);return;}
   if(us){e.preventDefault();e.stopPropagation();toggleSave(us.dataset.unsave);return;}
@@ -715,6 +763,7 @@ function downloadJSON(obj,name){
 }
 $("#exportEx").addEventListener("click",()=>downloadJSON(
   {items:EX.items,brands:EX.brands,keywords:EX.keywords},"excludes.json"));
+$("#exportRat").addEventListener("click",()=>downloadJSON(ratingsExport(),"ratings.json"));
 $("#exportCloset").addEventListener("click",()=>downloadJSON(CL,"closet.json"));
 $("#importCloset").addEventListener("click",()=>$("#importFile").click());
 $("#importFile").addEventListener("change",e=>{
