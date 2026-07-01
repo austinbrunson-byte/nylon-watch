@@ -4,7 +4,8 @@
   "default_floor": 0,
 
   "visual": {
-    "enabled": true,
+    "enabled": false,
+    "_disabled_note": "Image gloss scoring is OFF — the feed is now purely keyword-driven (shine_terms allowlist minus matte_fibers blocklist), which is simpler, instant, and deterministic. Flip back to true to re-enable the classical-CV gloss meter/ranking.",
     "max_images_per_run": 220,
     "max_side_px": 320,
     "gloss_floor_for_unkeyworded": 62,
@@ -76,13 +77,13 @@
   "global_avoid_weight": 3,
 
   "shine_terms": {
-    "_note": "THE ALLOWLIST — the ONLY way into the feed. A product is kept only if its title/description contains one of these shine words; a plain fabric label like 'nylon' is NOT enough. These are the keywords you asked for (gloss, shiny, reflective, sheen, satiny, silky, coated) plus metallic, ultralight and other shiny-fabric cues. Edit freely: add a word to surface more, remove one that's letting matte things in.",
-    "terms": ["gloss","glossy","high gloss","high-gloss","gloss finish","shiny","shine","high shine","high-shine","reflective","sheen","sheeny","lustre","luster","lustrous","polished","mirror","mirrored","satin","satiny","sateen","charmeuse","duchesse","silk","silky","silken","silk twill","metallic","metalized","metallised","liquid metal","liquid","lame","lamé","foil","foiled","chrome","holographic","iridescent","opalescent","pearlescent","coated","coating","wax coated","waxed","glazed","glassy","enamel","enamelled","lacquer","lacquered","patent","wet look","wet-look","wetlook","oil slick","oil-slick","slick","pvc","vinyl","tpu","latex","rubber","rubberised","rubberized","glanz","poly smooth","coated nylon","ultralight","ultra light","ultra-light"]
+    "_note": "THE ALLOWLIST — the ONLY way into the feed. A product is kept only if its title/description contains one of these shine words. Built from your list (nylon taffeta, gloss/glossy/high gloss, shine/high shine, iridescent, translucent, pvc, coated nylon, satin, sheen) plus closely-related shiny-fabric words. Add a word to surface more; remove one that lets matte things in.",
+    "terms": ["nylon taffeta","taffeta","gloss","glossy","high gloss","high-gloss","gloss finish","glossy finish","shine","shiny","high shine","high-shine","sheen","sheeny","iridescent","opalescent","pearlescent","holographic","translucent","transparent","see-through","sheer","pvc","vinyl","tpu","coated nylon","coated","coating","wax coated","waxed","glazed","lacquer","lacquered","enamel","satin","satiny","sateen","charmeuse","duchesse","silk","silky","metallic","metalised","metalized","chrome","foil","liquid metal","liquid","lame","lamé","mirror","mirrored","reflective","polished","wet look","wet-look","wetlook","oil slick","slick","patent","patent leather","latex","rubberised","rubberized","glanz","poly smooth","ultralight","ultra-light"]
   },
 
   "matte_fibers": {
-    "_note": "THE BLOCKLIST — anything whose NAME (title/type/tags) contains one of these matte fibers is dropped no matter what, so cotton/linen/canvas/wool garments never get through even if the copy also says 'satin'. Scanned on the garment's identity, not the full body, so a 'cotton lining' note won't kill a shiny shell. Bare 'cord'/'knit'/'twill' are intentionally omitted (they falsely hit cordura, ribbed-knit trims, and silk twill).",
-    "terms": ["cotton","linen","canvas","denim","wool","woollen","woolen","merino","cashmere","mohair","alpaca","corduroy","cord fabric","cord trousers","fleece","flannel","tweed","hemp","jersey","terry","towelling","toweling","boucle","bouclé","chino","khaki","suede","hessian","jute","muslin","poplin","seersucker"]
+    "_note": "THE BLOCKLIST — anything whose NAME (title/type/tags) contains one of these matte fibers is dropped no matter what, even if the copy also says 'satin'. You named cotton/linen/wool; the rest are obvious matte fabrics in the same spirit. Scanned on the garment's identity, not the full body, so a 'cotton lining' note won't kill a shiny shell. Trim this list if it's over-blocking.",
+    "terms": ["cotton","linen","wool","woollen","woolen","merino","cashmere","mohair","alpaca","canvas","denim","corduroy","fleece","flannel","tweed","hemp","jersey","terry","towelling","boucle","bouclé","suede","chino","khaki","hessian","jute","muslin"]
   },
 
   "disqualifiers": {
