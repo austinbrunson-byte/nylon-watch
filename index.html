@@ -243,6 +243,7 @@
 <main>
   <div id="status"></div>
   <div class="grid" id="feed"></div>
+  <div id="more" style="margin-top:14px"></div>
   <div class="empty" id="empty" style="display:none">
     <div class="big">Nothing matches yet.</div>
     Lower the gloss slider, enable more materials, or open ≡ for shops.
@@ -301,6 +302,10 @@ const STATE_URL="state.json";
 let DATA=null, sort="rank";
 const filters=new Set();
 let glossMin=0;
+// The feed can hold thousands of items; rendering them all at once (each with an
+// <img>) exhausts mobile Safari's memory and crashes the tab. So render in pages
+// and grow on scroll. shown resets to PAGE whenever the filter/sort/search changes.
+const PAGE=60; let shown=PAGE;
 const shopOff=new Set(JSON.parse(localStorage.getItem("nw.shopOff")||"[]"));
 const matOff=new Set(JSON.parse(localStorage.getItem("nw.matOff")||"[]")); // materials user disabled locally
 // exclusion rules — mirror of poller's excludes.json. Hides from feed instantly;
@@ -462,11 +467,10 @@ function render(){
   $("#closetN").textContent = (CL.saved.length+CL.owned.length)?`(${CL.saved.length+CL.owned.length})`:"";
 
   if(view==="feed"){
-    const list=visible();
-    feed.innerHTML=list.map(card).join("");
-    empty.style.display=list.length?"none":"block";
-    empty.querySelector(".big").textContent="Nothing matches yet.";
+    shown=PAGE;           // filter/sort/search changed -> back to first page
+    paintFeed();
   }else{
+    $("#more").innerHTML="";
     renderCloset();
   }
   $("#count").textContent=(DATA.products||[]).filter(p=>!shopOff.has(p.shop)&&!isExcluded(p)&&passesMaterial(p)).length;
@@ -476,6 +480,30 @@ function render(){
   $("#visnote").innerHTML=(DATA.visual_on===false)?`<span style="color:var(--dim)">visual off</span>`:"";
   renderMats(); renderShops(); renderExcluded();
 }
+
+let _io=null;
+function paintFeed(){
+  const list=visible();
+  const slice=list.slice(0,shown);
+  feed.innerHTML=slice.map(card).join("");
+  empty.style.display=list.length?"none":"block";
+  if(!list.length)empty.querySelector(".big").textContent="Nothing matches yet.";
+  // page control: a "load more" button + an invisible sentinel that auto-loads
+  // the next page when scrolled near, so we never build thousands of cards at once
+  const more=$("#more");
+  if(list.length>slice.length){
+    more.innerHTML=`<button id="loadMoreBtn" class="addbtn" style="background:var(--card);color:var(--s3);border:1px solid var(--line)">Load more — showing ${slice.length} of ${list.length}</button><div id="sentinel" style="height:1px"></div>`;
+    const s=$("#sentinel");
+    if(_io)_io.disconnect();
+    _io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting))loadMore();},{rootMargin:"800px"});
+    _io.observe(s);
+  }else{
+    if(_io){_io.disconnect();_io=null;}
+    more.innerHTML="";
+  }
+}
+function loadMore(){ shown+=PAGE; paintFeed(); }
+$("#more").addEventListener("click",e=>{ if(e.target.closest("#loadMoreBtn"))loadMore(); });
 
 function closetCard(it,kind){
   // saved items can be cross-referenced to live state for restock/availability
