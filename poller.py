@@ -349,10 +349,17 @@ def is_excluded(p, excludes):
 
 
 def keep_decision(p, tax):
-    enabled = {m for m, c in tax.get("materials", {}).items() if c.get("enabled", True)}
+    mats = tax.get("materials", {})
     floor = tax.get("default_floor", 0)
     gfloor = tax.get("visual", {}).get("gloss_floor_for_unkeyworded", 62)
-    matched_enabled = any(m in enabled for m in p["materials"])
+    # Only SHINE materials (satin, wet-look, patent, latex, pvc) keep an item on
+    # keywords. Matte-prone fabric labels (nylon, rainwear) carry keyword_keep:false
+    # — they tag for display but must be proven glossy by the image. This is what
+    # stops the feed filling with matte technical nylon.
+    matched_enabled = any(m in p["materials"]
+                          and mats.get(m, {}).get("enabled", True)
+                          and mats.get(m, {}).get("keyword_keep", True)
+                          for m in p["materials"])
     keyword_keep = matched_enabled and p["fit_score"] >= floor
     gloss_keep = (p.get("gloss_score") or 0) >= gfloor
     if keyword_keep and gloss_keep:

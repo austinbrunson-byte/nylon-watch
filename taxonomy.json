@@ -25,6 +25,8 @@
   "materials": {
     "nylon": {
       "enabled": true,
+      "keyword_keep": false,
+      "_note": "keyword_keep:false — 'nylon' and technical/brand labels are NOT a reliable shine signal (most technical nylon is matte). These terms only TAG an item for display/filtering; a nylon piece is kept ONLY if its photo actually scores glossy. This is the fix for the matte-nylon flood.",
       "weight": 1,
       "terms": ["nylon","taffeta","ripstop","ny/co","pertex","tyvek","cordura","shell jacket","windbreaker","anorak","coach jacket","coaches jacket","track jacket","cagoule","smock","packable","octa","gore-tex","mothtech","auralite","peaceshell","and wander","goldwin","snow peak","satisfy","gramicci","nanamica","arc'teryx","descente"],
       "avoid": ["cotton nylon blend tee"]
@@ -32,8 +34,8 @@
     "satin": {
       "enabled": true,
       "weight": 1,
-      "terms": ["satin","sateen","charmeuse","silk twill","liquid","high shine","high-shine","shiny","glossy","sheen","lustre","luster","polished","mirror","metallic","lame","lamé","duchesse"],
-      "avoid": ["matte satin","satin finish hardware","brushed"]
+      "terms": ["satin","satiny","sateen","charmeuse","silk","silky","silken","silk twill","liquid","high shine","high-shine","shiny","shine","glossy","gloss","reflective","sheen","lustre","luster","lustrous","polished","mirror","metallic","iridescent","holographic","chrome","foil","lame","lamé","duchesse"],
+      "avoid": ["matte satin","satin finish hardware","brushed","matte"]
     },
     "latex": {
       "enabled": false,
@@ -50,7 +52,7 @@
     "wetlook": {
       "enabled": true,
       "weight": 2,
-      "terms": ["wet look","wet-look","wetlook","liquid","oil slick","oil-slick","coated","wax coated","waxed","glazed","lacquer","lacquered","slick","glossy coated","high gloss","high-gloss"],
+      "terms": ["wet look","wet-look","wetlook","liquid","oil slick","oil-slick","coated","coating","wax coated","waxed","glazed","glassy","lacquer","lacquered","enamel","slick","glossy coated","high gloss","high-gloss","reflective"],
       "avoid": []
     },
     "patent": {
@@ -61,6 +63,8 @@
     },
     "rainwear": {
       "enabled": true,
+      "keyword_keep": false,
+      "_note": "keyword_keep:false — plain rain/waterproof labels are often matte, so rainwear terms only TAG for display; a rain piece is kept only if the photo scores glossy (or it also hits a genuine shine word like 'coated'/'lacquer', which live in wetlook). High-gloss PU rainwear like Rains still surfaces via its shiny image.",
       "weight": 1,
       "terms": ["rain","raincoat","rainwear","waterproof","rubberised","rubberized","pu coated","pu-coated","rains","slicker","sou'wester","oilskin","mackintosh","mac coat","poncho","overcoat shiny","fisherman"],
       "avoid": ["rain check","water resistant dwr only"]
