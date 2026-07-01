@@ -75,6 +75,16 @@
 
   "global_avoid_weight": 3,
 
+  "shine_terms": {
+    "_note": "THE ALLOWLIST — the ONLY way into the feed. A product is kept only if its title/description contains one of these shine words; a plain fabric label like 'nylon' is NOT enough. These are the keywords you asked for (gloss, shiny, reflective, sheen, satiny, silky, coated) plus metallic, ultralight and other shiny-fabric cues. Edit freely: add a word to surface more, remove one that's letting matte things in.",
+    "terms": ["gloss","glossy","high gloss","high-gloss","gloss finish","shiny","shine","high shine","high-shine","reflective","sheen","sheeny","lustre","luster","lustrous","polished","mirror","mirrored","satin","satiny","sateen","charmeuse","duchesse","silk","silky","silken","silk twill","metallic","metalized","metallised","liquid metal","liquid","lame","lamé","foil","foiled","chrome","holographic","iridescent","opalescent","pearlescent","coated","coating","wax coated","waxed","glazed","glassy","enamel","enamelled","lacquer","lacquered","patent","wet look","wet-look","wetlook","oil slick","oil-slick","slick","pvc","vinyl","tpu","latex","rubber","rubberised","rubberized","glanz","poly smooth","coated nylon","ultralight","ultra light","ultra-light"]
+  },
+
+  "matte_fibers": {
+    "_note": "THE BLOCKLIST — anything whose NAME (title/type/tags) contains one of these matte fibers is dropped no matter what, so cotton/linen/canvas/wool garments never get through even if the copy also says 'satin'. Scanned on the garment's identity, not the full body, so a 'cotton lining' note won't kill a shiny shell. Bare 'cord'/'knit'/'twill' are intentionally omitted (they falsely hit cordura, ribbed-knit trims, and silk twill).",
+    "terms": ["cotton","linen","canvas","denim","wool","woollen","woolen","merino","cashmere","mohair","alpaca","corduroy","cord fabric","cord trousers","fleece","flannel","tweed","hemp","jersey","terry","towelling","toweling","boucle","bouclé","chino","khaki","suede","hessian","jute","muslin","poplin","seersucker"]
+  },
+
   "disqualifiers": {
     "_note": "SILHOUETTE / HARDWARE VETO. gloss.py judges sheen, not shape, so latex/PVC/fetish shops throw contoured, hardware-heavy, cut-to-expose false positives that the gloss score alone can't reject. A product whose title/description matches ANY term here is dropped by the poller BEFORE it renders or gets an image scored, no matter how glossy — the aesthetic wants boxy/baggy real-clothes cuts (button-ups, tees, track jackets, trousers, shorts), not fetish garments. This list is a coarse TEXT proxy for shape and is meant to be edited: remove a term if it's cutting real clothes you want, add one if junk gets through. Terms were chosen to avoid false hits on desirable pieces (e.g. 'cage' is omitted because it's inside 'cagoule'; bare 'crotch' is omitted because technical trousers list a gusseted crotch; 'chest zip' is omitted because tracked running shops use chest-zip pockets).",
     "terms": ["locking collar","posture collar","harness","body harness","corset","bondage","bdsm","fetish","gimp","hobble","ball gag","crotchless","crotch zip","crotch-zip","zip crotch","lace-up","lace up","cutout","cut-out","open back","backless","sideless","underboob","underbust","nipple","garter","waist cincher","cincher","waspie","bodycon","strappy"]

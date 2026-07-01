@@ -210,6 +210,30 @@ def matched_disqualifier(text, tax):
     return ""
 
 
+def matched_shine(text, tax):
+    """First shine keyword found (gloss/shiny/satin/coated/metallic/ultralight...),
+    or "". This is the ALLOWLIST that decides what enters the feed — only fabrics
+    whose text says they're shiny. Editable in taxonomy.json -> shine_terms."""
+    t = (text or "").lower()
+    for term in tax.get("shine_terms", {}).get("terms", []):
+        if term.lower() in t:
+            return term
+    return ""
+
+
+def matched_matte_fiber(text, tax):
+    """First matte-fiber word found (cotton/linen/canvas/wool...), or "". This is
+    the BLOCKLIST — anything made of these is dropped no matter what else it says.
+    Scanned on the garment's identity text (title/type/tags), not the full body,
+    so a 'cotton lining' note doesn't veto an otherwise shiny shell. Editable in
+    taxonomy.json -> matte_fibers."""
+    t = (text or "").lower()
+    for term in tax.get("matte_fibers", {}).get("terms", []):
+        if term.lower() in t:
+            return term
+    return ""
+
+
 def normalize(shop, p, tax):
     handle = p.get("handle", "")
     title = p.get("title", "")
@@ -220,8 +244,11 @@ def normalize(shop, p, tax):
         tags = " ".join(tags)
     body = p.get("body_html", "") or ""
     blob = " ".join([title, vendor, ptype, tags, body[:600]])
+    identity = " ".join([title, ptype, tags])   # garment's own name, not lining notes
     fit, mats, hits = tag_materials(blob, tax)
     disq = matched_disqualifier(blob, tax)
+    shine = matched_shine(blob, tax)
+    matte = matched_matte_fiber(identity, tax)
 
     image = ""
     imgs = p.get("images") or []
@@ -248,7 +275,7 @@ def normalize(shop, p, tax):
         "url": f"{shop['site'].rstrip('/')}/products/{handle}",
         "image": image, "price": price,
         "fit_score": fit, "materials": mats, "hits": list(dict.fromkeys(hits))[:8],
-        "disqualified": disq,
+        "disqualified": disq, "shine": shine, "matte_fiber": matte,
         "gloss_score": None, "gloss_ok": None,
         "variants": variants,
         "any_available": any(v["available"] for v in variants),
@@ -348,29 +375,6 @@ def is_excluded(p, excludes):
     return False
 
 
-def keep_decision(p, tax):
-    mats = tax.get("materials", {})
-    floor = tax.get("default_floor", 0)
-    gfloor = tax.get("visual", {}).get("gloss_floor_for_unkeyworded", 62)
-    # Only SHINE materials (satin, wet-look, patent, latex, pvc) keep an item on
-    # keywords. Matte-prone fabric labels (nylon, rainwear) carry keyword_keep:false
-    # — they tag for display but must be proven glossy by the image. This is what
-    # stops the feed filling with matte technical nylon.
-    matched_enabled = any(m in p["materials"]
-                          and mats.get(m, {}).get("enabled", True)
-                          and mats.get(m, {}).get("keyword_keep", True)
-                          for m in p["materials"])
-    keyword_keep = matched_enabled and p["fit_score"] >= floor
-    gloss_keep = (p.get("gloss_score") or 0) >= gfloor
-    if keyword_keep and gloss_keep:
-        return True, "BOTH"
-    if keyword_keep:
-        return True, "KW"
-    if gloss_keep:
-        return True, "GLOSSY"
-    return False, ""
-
-
 # Default tone-ranking config; overridable in taxonomy.json -> visual.tone_ranking.
 TONE_DEFAULTS = {
     "enabled": True,
@@ -450,38 +454,52 @@ def main():
     if n_excluded:
         log(f"excluded {n_excluded} products via excludes.json")
 
-    # silhouette/hardware veto: drop fetish/expose-not-cover cuts before render,
-    # regardless of how glossy the photo is. A hard "no", also pre-imaging so we
-    # don't spend the image budget on a piece the aesthetic rejects on shape.
-    n_before = len(raw_normed)
-    raw_normed = [p for p in raw_normed if not p.get("disqualified")]
-    n_disqualified = n_before - len(raw_normed)
-    if n_disqualified:
-        log(f"disqualified {n_disqualified} products via taxonomy disqualifiers")
+    key = lambda p: p["shop"] + "|" + p["pid"]
 
-    # your "not shiny" verdicts hide those items everywhere (feed + any push)
+    # your "not shiny" verdicts hide those items everywhere
     n_before = len(raw_normed)
-    raw_normed = [p for p in raw_normed if (p["shop"] + "|" + p["pid"]) not in matte_set]
+    raw_normed = [p for p in raw_normed if key(p) not in matte_set]
     n_matte = n_before - len(raw_normed)
     if n_matte:
         log(f"hid {n_matte} products you rated 'not shiny' (ratings.json)")
 
-    candidates = [p for p in raw_normed if p["fit_score"] > 0 or
-                  (not p["materials"] and p["fit_score"] >= 0)]
-    analyzed = run_visual(candidates, tax, imgcache)
-    log(f"visual: analyzed {analyzed} new images, cache {len(imgcache)}")
+    # Hard vetoes (silhouette/hardware, and MATTE FIBERS like cotton/linen/canvas)
+    # drop items before anything else — EXCEPT ones you explicitly marked shiny,
+    # which always stay. This is what enforces "only shiny fabric".
+    def vetoed(p):
+        if key(p) in shiny_set:
+            return None
+        if p.get("disqualified"):
+            return "disq"
+        if p.get("matte_fiber"):
+            return "matte_fiber"
+        return None
+    n_disqualified = sum(1 for p in raw_normed if vetoed(p) == "disq")
+    n_matte_fiber = sum(1 for p in raw_normed if vetoed(p) == "matte_fiber")
+    raw_normed = [p for p in raw_normed if not vetoed(p)]
+    if n_disqualified:
+        log(f"disqualified {n_disqualified} products via taxonomy disqualifiers")
+    if n_matte_fiber:
+        log(f"vetoed {n_matte_fiber} products for matte fibers (cotton/linen/canvas/...)")
 
-    current = []
-    for p in raw_normed:
-        keep, why = keep_decision(p, tax)
-        is_pick = (p["shop"] + "|" + p["pid"]) in shiny_set
-        if keep or is_pick:                 # a 'shiny' pick is kept even if the
-            p["keep_reason"] = why or "PICK"  # score/keywords would have dropped it
-            p["tone"], p["desire"] = tone_and_desire(p, tax)
-            if is_pick:
-                p["pick"] = True
-                p["desire"] += 1000         # your picks rank above everything
-            current.append(p)
+    # THE GATE: keep only items whose text carries a shine keyword (shine_terms),
+    # or that you explicitly marked shiny. Fabric label alone (plain nylon) is not
+    # enough — it must actually say shiny/gloss/satin/coated/metallic/ultralight/...
+    current = [p for p in raw_normed if p.get("shine") or key(p) in shiny_set]
+    n_kept_shine = len(current)
+
+    # Image ONLY the kept (shiny) set — for ranking/tone/the gloss meter, no longer
+    # to decide keeping. Small set => full coverage every run, nothing to wait for.
+    analyzed = run_visual(current, tax, imgcache)
+    log(f"visual: analyzed {analyzed} new images (kept set {len(current)}), cache {len(imgcache)}")
+
+    for p in current:
+        is_pick = key(p) in shiny_set
+        p["keep_reason"] = "SHINE" if p.get("shine") else "PICK"
+        p["tone"], p["desire"] = tone_and_desire(p, tax)
+        if is_pick:
+            p["pick"] = True
+            p["desire"] += 1000             # your picks rank above everything
 
     counts = {}
     for p in current:
@@ -584,6 +602,7 @@ def main():
         "gloss_floor": tax.get("visual", {}).get("gloss_floor_for_unkeyworded", 62),
         "excluded_count": n_excluded,
         "disqualified_count": n_disqualified,
+        "matte_fiber_count": n_matte_fiber,
         "rated_matte_count": n_matte,
         "rated_shiny_count": sum(1 for p in current if p.get("pick")),
         "excludes_active": bool(excludes.get("items") or excludes.get("brands") or excludes.get("keywords")),
