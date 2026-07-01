@@ -23,7 +23,9 @@ the unlabelled-shiny catch.
 import json
 import os
 import time
+import random
 import hashlib
+import tempfile
 import urllib.request
 import urllib.error
 from datetime import datetime, timezone
@@ -52,6 +54,12 @@ IMG_TIMEOUT = 18
 SLEEP_BETWEEN = 1.2
 IMG_SLEEP = 0.25
 MAX_IMG_BYTES = 4_000_000
+# Statuses worth retrying: Shopify's bot-mitigation intermittently 503/430/429s
+# GitHub's datacenter IPs, and a different shop tends to fail each run. These are
+# transient, so a polite retry with jitter keeps one blip from dropping a shop's
+# whole catalog. Hard statuses (403/404/401) are NOT here — they fail fast.
+RETRY_STATUS = {429, 430, 500, 502, 503, 504}
+FETCH_RETRIES = 3
 IMG_CACHE_TTL_DAYS = 45  # keep a scored image this long after we last saw it,
                          # so a shop failing to fetch for a run doesn't discard
                          # (and force costly re-scoring of) all its gloss cache.
@@ -75,23 +83,68 @@ def load_json(path, default):
     return default
 
 
-def http_get_json(url, retries=2):
-    """GET JSON with a light retry on transient errors. An HTTPError (a real
-    status like 403/430) is a hard block and propagates immediately; timeouts
-    and connection resets are retried with a short backoff."""
+def _backoff_sleep(attempt, retry_after=None):
+    """Exponential backoff (1s, 2s, 4s...) capped at 20s, plus up to 1.5s of
+    random jitter so many shops retrying at once don't sync into a thundering
+    herd. Honors a server Retry-After header when it gives a plain number."""
+    if retry_after and str(retry_after).strip().isdigit():
+        base = min(float(retry_after), 20.0)
+    else:
+        base = min(2.0 ** attempt, 20.0)
+    time.sleep(base + random.uniform(0.0, 1.5))
+
+
+def http_get_json(url, retries=FETCH_RETRIES):
+    """GET JSON, retrying transient failures with jittered backoff.
+
+    Retries on: connection timeouts/resets AND HTTP statuses in RETRY_STATUS
+    (503/430/429/5xx — Shopify's intermittent bot-mitigation). A hard status
+    like 403/404 is a real block and propagates immediately without waiting."""
     last = None
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, "Accept": "application/json"})
     for attempt in range(retries + 1):
         try:
             with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as r:
                 return json.loads(r.read().decode("utf-8", "replace"))
-        except urllib.error.HTTPError:
+        except urllib.error.HTTPError as e:
+            last = e
+            if e.code in RETRY_STATUS and attempt < retries:
+                ra = e.headers.get("Retry-After") if e.headers else None
+                log(f"  transient HTTP {e.code} on attempt {attempt + 1}, backing off")
+                _backoff_sleep(attempt, ra)
+                continue
             raise
         except Exception as e:
             last = e
             if attempt < retries:
-                time.sleep(2 * (attempt + 1))
+                log(f"  transient error on attempt {attempt + 1} ({str(e)[:60]}), backing off")
+                _backoff_sleep(attempt)
+                continue
+            raise
     raise last
+
+
+def atomic_write_json(path, obj):
+    """Write JSON to a temp file in the same directory, fsync, then os.replace
+    onto the target. os.replace is atomic, so a crash mid-write can never leave
+    a truncated/half-written file behind — readers always see either the old
+    complete file or the new complete file. This is what stops a crashed run
+    from corrupting state.json (a partial state was the notification-storm root
+    cause: a truncated file read as 'no products' and reset first_run)."""
+    d = os.path.dirname(path) or "."
+    fd, tmp = tempfile.mkstemp(prefix=".tmp_", suffix=".json", dir=d)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(obj, f, ensure_ascii=False, separators=(",", ":"))
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, path)
+    except Exception:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+        raise
 
 
 def http_get_bytes(url, timeout, cap):
@@ -143,6 +196,19 @@ def tag_materials(text, tax):
     return fit, matched, hits
 
 
+def matched_disqualifier(text, tax):
+    """Return the first silhouette/hardware disqualifier term found in the text,
+    or "". These are the fetish/hardware/expose-not-cover cues (locking collar,
+    harness, crotch zip, lace-up, corset...) that gloss.py can't see because it
+    scores sheen, not shape. Text is a coarse proxy, but it's the only shape
+    signal available. Shipped and editable in taxonomy.json -> disqualifiers."""
+    t = (text or "").lower()
+    for term in tax.get("disqualifiers", {}).get("terms", []):
+        if term.lower() in t:
+            return term
+    return ""
+
+
 def normalize(shop, p, tax):
     handle = p.get("handle", "")
     title = p.get("title", "")
@@ -154,6 +220,7 @@ def normalize(shop, p, tax):
     body = p.get("body_html", "") or ""
     blob = " ".join([title, vendor, ptype, tags, body[:600]])
     fit, mats, hits = tag_materials(blob, tax)
+    disq = matched_disqualifier(blob, tax)
 
     image = ""
     imgs = p.get("images") or []
@@ -180,6 +247,7 @@ def normalize(shop, p, tax):
         "url": f"{shop['site'].rstrip('/')}/products/{handle}",
         "image": image, "price": price,
         "fit_score": fit, "materials": mats, "hits": list(dict.fromkeys(hits))[:8],
+        "disqualified": disq,
         "gloss_score": None, "gloss_ok": None,
         "variants": variants,
         "any_available": any(v["available"] for v in variants),
@@ -319,6 +387,15 @@ def main():
     if n_excluded:
         log(f"excluded {n_excluded} products via excludes.json")
 
+    # silhouette/hardware veto: drop fetish/expose-not-cover cuts before render,
+    # regardless of how glossy the photo is. A hard "no", also pre-imaging so we
+    # don't spend the image budget on a piece the aesthetic rejects on shape.
+    n_before = len(raw_normed)
+    raw_normed = [p for p in raw_normed if not p.get("disqualified")]
+    n_disqualified = n_before - len(raw_normed)
+    if n_disqualified:
+        log(f"disqualified {n_disqualified} products via taxonomy disqualifiers")
+
     candidates = [p for p in raw_normed if p["fit_score"] > 0 or
                   (not p["materials"] and p["fit_score"] >= 0)]
     analyzed = run_visual(candidates, tax, imgcache)
@@ -427,6 +504,7 @@ def main():
         "visual_on": tax.get("visual", {}).get("enabled", True) and GLOSS_AVAILABLE,
         "gloss_floor": tax.get("visual", {}).get("gloss_floor_for_unkeyworded", 62),
         "excluded_count": n_excluded,
+        "disqualified_count": n_disqualified,
         "excludes_active": bool(excludes.get("items") or excludes.get("brands") or excludes.get("keywords")),
         "product_count": len(current),
         "event_count": len(events),
@@ -434,10 +512,15 @@ def main():
         "products": sorted(current, key=rank),
         "alerted_ids": alerted_list,
     }
-    with open(STATE_PATH, "w", encoding="utf-8") as f:
-        json.dump(out, f, ensure_ascii=False, separators=(",", ":"))
-    with open(IMGCACHE_PATH, "w", encoding="utf-8") as f:
-        json.dump(imgcache, f, separators=(",", ":"))
+    # Don't overwrite a good state with an empty one: if EVERY shop failed to
+    # fetch this run (a bad-luck cron where bot-mitigation blocked all of them)
+    # and we already have a populated state, keep the last good state untouched.
+    any_ok = any(st.get("ok") for st in shop_status.values())
+    if not any_ok and prev:
+        log("ALL shops failed this run — preserving previous state.json, skipping write.")
+        return
+    atomic_write_json(STATE_PATH, out)
+    atomic_write_json(IMGCACHE_PATH, imgcache)
 
     log(f"DONE kept={len(current)} events={len(events)} first_run={first_run}")
     if first_run:

@@ -58,5 +58,10 @@
 
   "global_avoid": ["sock","socks","beanie","fragrance","perfume","candle","incense","mug","sticker","keyring","pin badge","tote bag canvas","wallet","sunglasses","book","poster","gift card","cotton tee","pocket tee","denim jean","chino","corduroy","lambswool","cashmere knit","fleece jacket","flannel shirt"],
 
-  "global_avoid_weight": 3
+  "global_avoid_weight": 3,
+
+  "disqualifiers": {
+    "_note": "SILHOUETTE / HARDWARE VETO. gloss.py judges sheen, not shape, so latex/PVC/fetish shops throw contoured, hardware-heavy, cut-to-expose false positives that the gloss score alone can't reject. A product whose title/description matches ANY term here is dropped by the poller BEFORE it renders or gets an image scored, no matter how glossy — the aesthetic wants boxy/baggy real-clothes cuts (button-ups, tees, track jackets, trousers, shorts), not fetish garments. This list is a coarse TEXT proxy for shape and is meant to be edited: remove a term if it's cutting real clothes you want, add one if junk gets through. Terms were chosen to avoid false hits on desirable pieces (e.g. 'cage' is omitted because it's inside 'cagoule'; bare 'crotch' is omitted because technical trousers list a gusseted crotch; 'chest zip' is omitted because tracked running shops use chest-zip pockets).",
+    "terms": ["locking collar","posture collar","harness","body harness","corset","bondage","bdsm","fetish","gimp","hobble","ball gag","crotchless","crotch zip","crotch-zip","zip crotch","lace-up","lace up","cutout","cut-out","open back","backless","sideless","underboob","underbust","nipple","garter","waist cincher","cincher","waspie","bodycon","strappy"]
+  }
 }
