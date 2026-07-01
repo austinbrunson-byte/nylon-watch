@@ -8,7 +8,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="NYLON WATCH">
 <title>NYLON WATCH</title>
-<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23b8c6d6'/%3E%3Cstop offset='.45' stop-color='%23e9d8f4'/%3E%3Cstop offset='.7' stop-color='%23a8e0d4'/%3E%3Cstop offset='1' stop-color='%237b8aa0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='180' height='180' rx='40' fill='%230a0a0f'/%3E%3Ctext x='50%25' y='58%25' font-family='Helvetica,Arial' font-weight='800' font-size='96' text-anchor='middle' fill='url(%23g)'%3EN%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
 <style>
   :root{
     --bg:#0a0a0f;--bg2:#11121a;--card:#15161f;--line:#23252f;
@@ -133,6 +135,12 @@
     display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
   .mtags{display:flex;gap:4px;flex-wrap:wrap;margin-top:1px}
   .mtag{font-size:9px;letter-spacing:.05em;color:var(--s3);border:1px solid var(--line);border-radius:4px;padding:0 5px;text-transform:uppercase}
+  /* gloss tone tag — colored/metallic/wet-look/black-satin classification */
+  .tone{font-size:9px;letter-spacing:.06em;border-radius:4px;padding:0 5px;text-transform:uppercase;font-weight:700}
+  .tone.colored{background:var(--restock);color:#0a0a0f}
+  .tone.metallic{background:#c9d3e0;color:#0a0a0f}
+  .tone.wetlook_black{background:var(--s3);color:#0a0a0f}
+  .tone.black_satin{background:#3a3d49;color:var(--mut)}
   .row{display:flex;justify-content:space-between;align-items:baseline;margin-top:auto;padding-top:6px}
   .price{font-size:13px;font-weight:700}
   .shop{font-size:9.5px;color:var(--dim)}
@@ -213,6 +221,7 @@
     <button class="pill new" data-filter="NEW" aria-pressed="false">● New</button>
     <button class="pill restock" data-filter="RESTOCK" aria-pressed="false">● Restock</button>
     <button class="pill glossy" data-filter="GLOSSY" aria-pressed="false">● Unlisted shine</button>
+    <button class="pill" data-filter="priority" aria-pressed="false">★ Priority tone</button>
     <button class="pill" data-filter="instock" aria-pressed="false">In stock</button>
   </div>
   <div class="mats" id="mats"><span class="mlabel">Material</span></div>
@@ -392,13 +401,17 @@ function visible(){
       for(const f of filters){
         if(f==="instock"){if(!p.any_available)return false;}
         else if(f==="GLOSSY"){if(p.keep_reason!=="GLOSSY")return false;}
+        else if(f==="priority"){if(!["colored","metallic","wetlook_black"].includes(p.tone))return false;}
         else if(p.flag!==f)return false;
       }
       return true;
     });
   }
   const r=p=>p.flag==="RESTOCK"?2:p.flag==="NEW"?1:0;
-  if(sort==="rank") list.sort((a,b)=>r(b)-r(a)||((b.gloss_score||0)+b.fit_score)-((a.gloss_score||0)+a.fit_score));
+  // 'desire' = gloss + tone bonus/penalty (from the poller). Falls back to
+  // gloss+fit for items scored before tone ranking existed.
+  const des=p=>(p.desire!=null)?p.desire:((p.gloss_score||0)+p.fit_score);
+  if(sort==="rank") list.sort((a,b)=>r(b)-r(a)||des(b)-des(a));
   else if(sort==="gloss") list.sort((a,b)=>(b.gloss_score||0)-(a.gloss_score||0));
   else if(sort==="new") list.sort((a,b)=>(b.published_at||"").localeCompare(a.published_at||""));
   else if(sort==="price") list.sort((a,b)=>(a.price??1e9)-(b.price??1e9));
@@ -420,6 +433,8 @@ function card(p){
     const cls=restocked.has(v.title)?"sz restocked":v.available?"sz on":"sz";
     return `<span class="${cls}">${esc(v.title||"OS")}</span>`;}).join("");
   const mtags=(p.materials||[]).slice(0,3).map(m=>`<span class="mtag">${esc(m.replace("_","/"))}</span>`).join("");
+  const TONE_LABEL={colored:"Colour",metallic:"Metallic",wetlook_black:"Wet black",black_satin:"Satin"};
+  const toneTag=(p.tone&&TONE_LABEL[p.tone])?`<span class="tone ${p.tone}">${TONE_LABEL[p.tone]}</span>`:"";
   const price=p.price?"$"+Math.round(p.price):"";
   const ekey=p.shop+"|"+p.pid;
   const saved=isSaved(ekey)?"on":"";
@@ -430,7 +445,7 @@ function card(p){
     <div class="meta">
       <div class="vendor">${esc(p.vendor||p.shop_name)}</div>
       <div class="title">${esc(p.title)}</div>
-      <div class="mtags">${mtags}</div>
+      <div class="mtags">${mtags}${toneTag}</div>
       <div class="sizes">${sizes}</div>
       <div class="row"><span class="price">${price}</span><span class="shop">${esc(p.shop_name)}</span></div>
     </div></a>`;

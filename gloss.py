@@ -85,6 +85,7 @@ def score_image_bytes(raw):
     vals = lum[mask > 0.5]
     if vals.size < 50:
         vals = lum.reshape(-1)
+    subj_val = float(np.median(vals))  # overall darkness of the garment (0=black)
     p5, p95 = np.percentile(vals, 5), np.percentile(vals, 95)
     dr = float(np.clip(p95 - p5, 0, 1))
     # Also reward a heavy bright tail (the highlight) specifically.
@@ -112,6 +113,13 @@ def score_image_bytes(raw):
         "spec_density": round(spec_density, 4),
         "dynrange": round(dr_score, 3),
         "litsat": round(sat_score, 3),
+        # --- tone signals for aesthetic ranking (measurement only; the poller
+        # turns these into colored/metallic/black-satin tiers) ---
+        # lit_sat_raw: mean saturation of the lit band -> colored vs colorless.
+        # subj_val:    median subject brightness       -> metallic(bright) vs black(dark).
+        # spec_density already above: highlight tightness -> wet-look(sharp) vs satin(soft).
+        "lit_sat_raw": round(lit_sat, 3),
+        "subj_val": round(subj_val, 3),
     }
 
 

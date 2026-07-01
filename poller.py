@@ -264,6 +264,13 @@ def run_visual(candidates, tax, imgcache):
     cap = vis.get("max_images_per_run", 200)
     # spend image budget on keyword hits first, then newest
     candidates.sort(key=lambda p: (p["fit_score"] > 0, p.get("published_at", "")), reverse=True)
+    def apply_tone(prod, d):
+        # tone signals ride alongside gloss; missing on legacy cache entries,
+        # which the ranker then treats as neutral (no bonus/penalty).
+        prod["litsat"] = d.get("litsat")
+        prod["subjval"] = d.get("subjval")
+        prod["specden"] = d.get("specden")
+
     analyzed = 0
     for p in candidates:
         url = p.get("image")
@@ -273,6 +280,7 @@ def run_visual(candidates, tax, imgcache):
         if cached is not None:
             p["gloss_score"] = cached.get("gloss")
             p["gloss_ok"] = cached.get("ok")
+            apply_tone(p, cached)
             continue
         if analyzed >= cap:
             continue
@@ -281,8 +289,12 @@ def run_visual(candidates, tax, imgcache):
             res = score_image_bytes(raw)
             p["gloss_score"] = res.get("gloss", 0)
             p["gloss_ok"] = res.get("ok", False)
-            imgcache[url] = {"gloss": p["gloss_score"], "ok": p["gloss_ok"],
-                             "at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
+            entry = {"gloss": p["gloss_score"], "ok": p["gloss_ok"],
+                     "litsat": res.get("lit_sat_raw"), "subjval": res.get("subj_val"),
+                     "specden": res.get("spec_density"),
+                     "at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
+            imgcache[url] = entry
+            apply_tone(p, entry)
             analyzed += 1
             time.sleep(IMG_SLEEP)
         except Exception as e:
@@ -351,6 +363,44 @@ def keep_decision(p, tax):
     return False, ""
 
 
+# Default tone-ranking config; overridable in taxonomy.json -> visual.tone_ranking.
+TONE_DEFAULTS = {
+    "enabled": True,
+    "min_gloss": 45,      # below this, a photo isn't glossy enough to tier — neutral
+    "sat_colored": 0.28,  # lit-band saturation above this = a COLORED gloss
+    "dark_val": 0.30,     # subject brightness below this = a DARK/black garment
+    "bright_val": 0.55,   # brightness above this + low saturation = METALLIC/silver
+    "sharp_spec": 0.02,   # highlight tightness above this = wet-look/latex (vs soft satin)
+    "bonus": {"colored": 30, "metallic": 18, "wetlook_black": 0,
+              "black_satin": -25, "neutral": 0},
+}
+
+
+def tone_and_desire(p, tax):
+    """Classify a product's gloss TONE from image signals and return
+    (tone, desire). desire = gloss_score + a tone bonus/penalty encoding the
+    aesthetic priority order: colored > metallic > black wet-look, with black
+    SATIN penalized (it reads flat/cheap). Items with no tone data (legacy
+    cache, or too matte to tier) are 'neutral' — no bonus, no penalty."""
+    cfg = {**TONE_DEFAULTS, **tax.get("visual", {}).get("tone_ranking", {})}
+    bonus = {**TONE_DEFAULTS["bonus"], **cfg.get("bonus", {})}
+    g = p.get("gloss_score") or 0
+    litsat, subjval, specden = p.get("litsat"), p.get("subjval"), p.get("specden")
+    if (not cfg.get("enabled", True) or g < cfg["min_gloss"]
+            or litsat is None or subjval is None):
+        tone = "neutral"
+    elif litsat >= cfg["sat_colored"]:
+        tone = "colored"
+    elif subjval <= cfg["dark_val"]:
+        # dark + colorless: sharp highlights = wet-look (good), soft = satin (cheap)
+        tone = "wetlook_black" if (specden or 0) >= cfg["sharp_spec"] else "black_satin"
+    elif subjval >= cfg["bright_val"]:
+        tone = "metallic"
+    else:
+        tone = "neutral"
+    return tone, g + bonus.get(tone, 0)
+
+
 def main():
     shops = [s for s in load_json(SHOPS_PATH, []) if s.get("enabled", True)]
     tax = load_json(TAX_PATH, {})
@@ -406,6 +456,7 @@ def main():
         keep, why = keep_decision(p, tax)
         if keep:
             p["keep_reason"] = why
+            p["tone"], p["desire"] = tone_and_desire(p, tax)
             current.append(p)
 
     counts = {}
@@ -494,7 +545,11 @@ def main():
 
     def rank(p):
         badge = 2 if p.get("flag") == "RESTOCK" else 1 if p.get("flag") == "NEW" else 0
-        return (-badge, -((p.get("gloss_score") or 0) + p["fit_score"]), p["title"])
+        # desire = gloss + tone bonus/penalty (colored/metallic up, black satin down)
+        desire = p.get("desire")
+        if desire is None:
+            desire = (p.get("gloss_score") or 0) + p["fit_score"]
+        return (-badge, -desire, p["title"])
 
     out = {
         "schema": 2,

@@ -8,7 +8,18 @@
     "max_images_per_run": 220,
     "max_side_px": 320,
     "gloss_floor_for_unkeyworded": 62,
-    "_note": "If a product matches NO material keyword but its image gloss >= gloss_floor_for_unkeyworded, it is kept and flagged GLOSSY — this is what catches shiny garments whose listings never say so. max_images_per_run caps work so the Action stays fast/free; newest + highest-keyword items are imaged first."
+    "_note": "If a product matches NO material keyword but its image gloss >= gloss_floor_for_unkeyworded, it is kept and flagged GLOSSY — this is what catches shiny garments whose listings never say so. max_images_per_run caps work so the Action stays fast/free; newest + highest-keyword items are imaged first.",
+
+    "tone_ranking": {
+      "enabled": true,
+      "_note": "Encodes the gloss PRIORITY order from image tone, not fiber. Each kept item gets a tone (colored/metallic/wetlook_black/black_satin/neutral) and a 'desire' = gloss + the matching bonus below, which drives the default 'Best' sort. Signals: litsat (lit-band saturation) => colored; subjval (subject brightness) => metallic(bright) vs black(dark); specden (highlight tightness) => wet-look(sharp) vs satin(soft). Colored jewel-tone and metallic/silver are rewarded; black true wet-look is neutral; black SATIN (dark + colorless + soft sheen) is penalized because it reads flat/cheap. Tune the thresholds/bonuses here; items with no image data stay neutral. This only reorders (and, via the app's 'Priority' filter, can hide) — it never changes what the poller keeps.",
+      "min_gloss": 45,
+      "sat_colored": 0.28,
+      "dark_val": 0.30,
+      "bright_val": 0.55,
+      "sharp_spec": 0.02,
+      "bonus": { "colored": 30, "metallic": 18, "wetlook_black": 0, "black_satin": -25, "neutral": 0 }
+    }
   },
 
   "materials": {
