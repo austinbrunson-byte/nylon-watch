@@ -328,6 +328,12 @@ function liveFor(ekey){return (DATA.products||[]).find(x=>x.shop+"|"+x.pid===eke
 const $=s=>document.querySelector(s);
 const feed=$("#feed"), empty=$("#empty");
 
+// Escape external text (Shopify titles/vendors, saved image+product URLs, and
+// user-typed closet fields) before it goes into innerHTML, so a listing whose
+// title contains <, >, quotes or markup can't break a card or inject content.
+const ESC_MAP={"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"};
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,c=>ESC_MAP[c]);}
+
 function fmtAge(iso){
   if(!iso)return"—";const d=new Date(iso),m=Math.round((new Date()-d)/60000);
   if(m<2)return"just now";if(m<60)return m+"m ago";
@@ -406,27 +412,27 @@ function card(p){
   if(p.keep_reason==="GLOSSY")b.push(`<span class="badge glossy">SHINE</span>`);
   const badges=b.length?`<div class="badges">${b.join("")}</div>`:"";
   const sold=!p.any_available?`<div class="soldout">SOLD OUT</div>`:"";
-  const img=p.image?`<img loading="lazy" src="${p.image}" alt="" onerror="this.parentNode.classList.add('ph');this.remove()">`:"";
+  const img=p.image?`<img loading="lazy" src="${esc(p.image)}" alt="" onerror="this.parentNode.classList.add('ph');this.remove()">`:"";
   const g=p.gloss_score;
   const gmeter=(g!=null)?`<div class="gmeter"><div class="bar"><div class="fill" style="width:${g}%"></div></div><span class="num">${g}</span></div>`:"";
   const restocked=new Set(p.restocked_sizes||[]);
   const sizes=(p.variants||[]).map(v=>{
     const cls=restocked.has(v.title)?"sz restocked":v.available?"sz on":"sz";
-    return `<span class="${cls}">${v.title||"OS"}</span>`;}).join("");
-  const mtags=(p.materials||[]).slice(0,3).map(m=>`<span class="mtag">${m.replace("_","/")}</span>`).join("");
+    return `<span class="${cls}">${esc(v.title||"OS")}</span>`;}).join("");
+  const mtags=(p.materials||[]).slice(0,3).map(m=>`<span class="mtag">${esc(m.replace("_","/"))}</span>`).join("");
   const price=p.price?"$"+Math.round(p.price):"";
   const ekey=p.shop+"|"+p.pid;
   const saved=isSaved(ekey)?"on":"";
-  return `<a class="card" href="${p.url}" target="_blank" rel="noopener" data-ekey="${ekey}">
-    <button class="hidebtn" data-hide="${ekey}" title="Hide / exclude" aria-label="Hide or exclude this item">⊘</button>
-    <button class="savebtn ${saved}" data-save="${ekey}" title="Save to closet" aria-label="Save to closet">${saved?"♥":"♡"}</button>
+  return `<a class="card" href="${esc(p.url)}" target="_blank" rel="noopener" data-ekey="${esc(ekey)}">
+    <button class="hidebtn" data-hide="${esc(ekey)}" title="Hide / exclude" aria-label="Hide or exclude this item">⊘</button>
+    <button class="savebtn ${saved}" data-save="${esc(ekey)}" title="Save to closet" aria-label="Save to closet">${saved?"♥":"♡"}</button>
     <div class="thumb">${badges}${img}${gmeter}${sold}</div>
     <div class="meta">
-      <div class="vendor">${p.vendor||p.shop_name}</div>
-      <div class="title">${p.title}</div>
+      <div class="vendor">${esc(p.vendor||p.shop_name)}</div>
+      <div class="title">${esc(p.title)}</div>
       <div class="mtags">${mtags}</div>
       <div class="sizes">${sizes}</div>
-      <div class="row"><span class="price">${price}</span><span class="shop">${p.shop_name}</span></div>
+      <div class="row"><span class="price">${price}</span><span class="shop">${esc(p.shop_name)}</span></div>
     </div></a>`;
 }
 
@@ -465,22 +471,21 @@ function closetCard(it,kind){
     else if(!live.any_available)badge=`<div class="badges"><span class="badge" style="background:var(--dim)">SOLD OUT</span></div>`;
     else badge=`<div class="badges"><span class="badge" style="background:var(--new)">IN STOCK</span></div>`;
   }
-  const img=it.image?`<img loading="lazy" src="${it.image}" alt="" onerror="this.parentNode.classList.add('ph');this.remove()">`:`<div class="thumb ph">no image</div>`;
-  const mtags=(it.materials||[]).slice(0,3).map(m=>`<span class="mtag">${(m||"").replace("_","/")}</span>`).join("");
-  const sub = kind==="owned" ? (it.size?`Size ${it.size}`:"") : (it.price?"$"+Math.round(it.price):"");
+  const img=it.image?`<img loading="lazy" src="${esc(it.image)}" alt="" onerror="this.parentNode.classList.add('ph');this.remove()">`:`<div class="thumb ph">no image</div>`;
+  const mtags=(it.materials||[]).slice(0,3).map(m=>`<span class="mtag">${esc((m||"").replace("_","/"))}</span>`).join("");
+  const sub = kind==="owned" ? (it.size?`Size ${esc(it.size)}`:"") : (it.price?"$"+Math.round(it.price):"");
   const rm = kind==="saved"
-    ? `<button class="hidebtn" data-unsave="${it.ekey}" title="Remove from saved">♥</button>`
-    : `<button class="hidebtn" data-removeowned="${it.id}" title="Remove from closet">✕</button>`;
-  const href = it.url||"#";
-  const tag = it.url?`<a class="card" href="${href}" target="_blank" rel="noopener">`:`<div class="card">`;
+    ? `<button class="hidebtn" data-unsave="${esc(it.ekey)}" title="Remove from saved">♥</button>`
+    : `<button class="hidebtn" data-removeowned="${esc(it.id)}" title="Remove from closet">✕</button>`;
+  const tag = it.url?`<a class="card" href="${esc(it.url)}" target="_blank" rel="noopener">`:`<div class="card">`;
   const endtag = it.url?`</a>`:`</div>`;
   return `${tag}${rm}
     <div class="thumb">${badge}${img}</div>
     <div class="meta">
-      <div class="vendor">${it.vendor||it.shop_name||""}</div>
-      <div class="title">${it.title||"(untitled)"}</div>
+      <div class="vendor">${esc(it.vendor||it.shop_name||"")}</div>
+      <div class="title">${esc(it.title||"(untitled)")}</div>
       <div class="mtags">${mtags}</div>
-      <div class="row"><span class="price">${sub||""}</span><span class="shop">${it.notes||""}</span></div>
+      <div class="row"><span class="price">${sub||""}</span><span class="shop">${esc(it.notes||"")}</span></div>
     </div>${endtag}`;
 }
 
@@ -520,10 +525,10 @@ function renderExcluded(){
   EX.items.forEach(k=>{
     const p=(DATA.products||[]).find(x=>x.shop+"|"+x.pid===k);
     const lab=p?`${p.vendor||""} — ${p.title}`:k;
-    rows.push(`<div class="exrow"><div style="overflow:hidden"><span class="typ">item</span><span class="lab">${lab}</span></div><button class="undo" data-unx="item:${k}">Un-hide</button></div>`);
+    rows.push(`<div class="exrow"><div style="overflow:hidden"><span class="typ">item</span><span class="lab">${esc(lab)}</span></div><button class="undo" data-unx="item:${esc(k)}">Un-hide</button></div>`);
   });
-  EX.brands.forEach(b=>rows.push(`<div class="exrow"><div><span class="typ">brand</span><span class="lab">${b}</span></div><button class="undo" data-unx="brand:${b}">Un-hide</button></div>`));
-  EX.keywords.forEach(k=>rows.push(`<div class="exrow"><div><span class="typ">word</span><span class="lab">"${k}"</span></div><button class="undo" data-unx="keyword:${k}">Un-hide</button></div>`));
+  EX.brands.forEach(b=>rows.push(`<div class="exrow"><div><span class="typ">brand</span><span class="lab">${esc(b)}</span></div><button class="undo" data-unx="brand:${esc(b)}">Un-hide</button></div>`));
+  EX.keywords.forEach(k=>rows.push(`<div class="exrow"><div><span class="typ">word</span><span class="lab">"${esc(k)}"</span></div><button class="undo" data-unx="keyword:${esc(k)}">Un-hide</button></div>`));
   $("#exList").innerHTML = rows.join("") || `<div class="shopnote">Nothing excluded yet. Tap ⊘ on any item to hide it, its brand, or a keyword.</div>`;
 }
 
@@ -550,8 +555,8 @@ function renderShops(){
   $("#shopList").innerHTML=Object.entries(seen).map(([id,name])=>{
     const on=!shopOff.has(id);const st=(DATA.shop_status||{})[id];
     const note=st?(st.ok?`${st.count??0} pieces`:`unreachable (${st.error||"error"})`):"";
-    return `<div class="shoprow"><div><div class="shopname">${name}</div><div class="shopnote">${note}</div></div>
-      <div class="toggle ${on?'on':''}" data-shop="${id}"></div></div>`;
+    return `<div class="shoprow"><div><div class="shopname">${esc(name)}</div><div class="shopnote">${esc(note)}</div></div>
+      <div class="toggle ${on?'on':''}" data-shop="${esc(id)}"></div></div>`;
   }).join("")||`<div class="shopnote">No shops reported yet.</div>`;
 }
 

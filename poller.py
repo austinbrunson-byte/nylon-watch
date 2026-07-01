@@ -52,6 +52,9 @@ IMG_TIMEOUT = 18
 SLEEP_BETWEEN = 1.2
 IMG_SLEEP = 0.25
 MAX_IMG_BYTES = 4_000_000
+IMG_CACHE_TTL_DAYS = 45  # keep a scored image this long after we last saw it,
+                         # so a shop failing to fetch for a run doesn't discard
+                         # (and force costly re-scoring of) all its gloss cache.
 
 NTFY_BASE = os.environ.get("NTFY_BASE", "https://ntfy.sh").rstrip("/")
 NTFY_TOPIC = os.environ.get("NTFY_TOPIC", "").strip()
@@ -72,10 +75,23 @@ def load_json(path, default):
     return default
 
 
-def http_get_json(url):
+def http_get_json(url, retries=2):
+    """GET JSON with a light retry on transient errors. An HTTPError (a real
+    status like 403/430) is a hard block and propagates immediately; timeouts
+    and connection resets are retried with a short backoff."""
+    last = None
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, "Accept": "application/json"})
-    with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as r:
-        return json.loads(r.read().decode("utf-8", "replace"))
+    for attempt in range(retries + 1):
+        try:
+            with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as r:
+                return json.loads(r.read().decode("utf-8", "replace"))
+        except urllib.error.HTTPError:
+            raise
+        except Exception as e:
+            last = e
+            if attempt < retries:
+                time.sleep(2 * (attempt + 1))
+    raise last
 
 
 def http_get_bytes(url, timeout, cap):
@@ -379,8 +395,25 @@ def main():
                 pass
 
     alerted_list = list(alerted)[-6000:]
+    # Prune the image cache by AGE, not strict presence: refresh last-seen for
+    # every image observed this run, and keep anything seen within the TTL so a
+    # transient shop outage doesn't purge (and force re-scoring of) its images.
+    now_ts = time.time()
+    ttl = IMG_CACHE_TTL_DAYS * 86400
     seen_imgs = {p["image"] for p in raw_normed if p.get("image")}
-    imgcache = {k: v for k, v in imgcache.items() if k in seen_imgs}
+    pruned = {}
+    for k, v in imgcache.items():
+        if not isinstance(v, dict):
+            continue
+        if k in seen_imgs:
+            v["seen"] = now_ts
+            pruned[k] = v
+        else:
+            last = v.get("seen", now_ts)  # legacy entries get a one-run grace
+            if now_ts - last < ttl:
+                v["seen"] = last
+                pruned[k] = v
+    imgcache = pruned
 
     def rank(p):
         badge = 2 if p.get("flag") == "RESTOCK" else 1 if p.get("flag") == "NEW" else 0
